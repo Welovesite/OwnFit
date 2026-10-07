@@ -6,10 +6,11 @@ Mobile personal training, boxing, kickboxing and Muay Thai across the UAE.
 
 | File | What it is |
 |---|---|
-| `index.html` | Home page (top coach for each service, packages, FAQ, booking form) |
-| `personal-training.html`, `boxing.html`, `kickboxing.html`, `muay-thai.html` | One page per service with what we do and the coaches list |
-| `coach.html` | Coach profile page. Each coach opens as `coach.html#coach-id` |
-| `js/data.js` | **Your WhatsApp number and all coach details.** Edit this file to add or change coaches |
+| `index.html` / `index-ar.html` | Home page in English / Arabic (top coach for each service, packages, FAQ, booking form) |
+| `personal-training.html`, `boxing.html`, `kickboxing.html`, `muay-thai.html` | One page per service (English) |
+| `personal-training-ar.html`, `boxing-ar.html`, `kickboxing-ar.html`, `muay-thai-ar.html` | The same service pages in Arabic (right-to-left) |
+| `coach.html` / `coach-ar.html` | Coach profile page. Each coach opens as `coach.html#coach-id` or `coach-ar.html#coach-id` |
+| `js/data.js` | **Your WhatsApp number and all coach details, in English and Arabic.** Edit this file to add or change coaches |
 | `js/main.js` | Builds the coach cards and profiles, and the booking form that opens WhatsApp |
 | `css/style.css` | Colours, fonts and layout (red & white brand colours are at the top) |
 | `assets/coaches/` | Coach photos (replace the placeholders with real photos) |
@@ -19,8 +20,14 @@ Mobile personal training, boxing, kickboxing and Muay Thai across the UAE.
 ## Before going live
 
 1. **WhatsApp number** – open `js/data.js` and replace `971500000000` with your number (country code, no `+` or spaces).
-2. **Prices** – in `index.html`, search for `[price]` and `[number]` and fill them in.
-3. **Instagram** – in `index.html`, replace `https://www.instagram.com/` with your profile link.
+2. **Prices** – in `index.html` search for `[price]` and `[number]`, and in `index-ar.html` search for `[السعر]` and `[العدد]`, and fill them in.
+3. **Instagram** – in all pages, replace `https://www.instagram.com/` with your profile link.
+
+## Languages
+
+Every page has an English and an Arabic version. The **العربية / English** button at the top switches to the same page in the other language (it keeps the coach you are looking at). Arabic visitors who fill in the booking form send their WhatsApp request in Arabic.
+
+To make Arabic the default when people visit your domain, swap the names of `index.html` and `index-ar.html` (and update the links), or ask your developer to do it.
 
 ## Adding or editing coaches
 
@@ -29,20 +36,24 @@ All coaches live in `js/data.js`. Each coach is one block like this:
 ```js
 {
   id: 'boxing-sara', service: 'boxing', featured: true,
-  name: 'Sara Ahmed', gender: 'Female',
+  name: 'Sara Ahmed', name_ar: 'سارة أحمد',
+  gender: 'Female', gender_ar: 'مدربة',
   headline: 'Former amateur boxer, technique specialist',
-  experience: '8 years',
+  headline_ar: 'ملاكمة هاوية سابقة ومتخصصة في التقنية',
+  experience: '8 years', experience_ar: '8 سنوات',
   photo: 'assets/coaches/sara.jpg',
   certifications: ['Certification 1', 'Certification 2'],
   languages: ['English', 'Arabic'],
   areas: ['Dubai', 'Sharjah'],
   specialties: ['Technique', 'Footwork'],
   bio: ['First paragraph about Sara.', 'Second paragraph.'],
-  gallery: [ { src: 'assets/coaches/sara-1.jpg', alt: 'Sara on the pads' } ],
-  videos: [ { type: 'youtube', id: 'YOUTUBE_VIDEO_ID', title: 'Combination drill' } ]
+  bio_ar: ['الفقرة الأولى عن سارة.', 'الفقرة الثانية.'],
+  gallery: [ { src: 'assets/coaches/sara-1.jpg', alt: 'Sara coaching', alt_ar: 'سارة أثناء التدريب' } ],
+  videos: [ { type: 'youtube', id: 'YOUTUBE_VIDEO_ID', title: 'Combination drill', title_ar: 'تمرين التركيبات' } ]
 }
 ```
 
+- Every text field has an Arabic twin ending in `_ar` (`certifications_ar`, `languages_ar`, `areas_ar`, `specialties_ar`, ...). If you leave an Arabic field out, the Arabic page shows the English text.
 - `service` must be `personal-training`, `boxing`, `kickboxing` or `muay-thai`.
 - `featured: true` makes the coach the **Top coach** shown on the home page (one per service).
 - Put photos in `assets/coaches/` (portrait photos about 800 × 1000 px work best).
