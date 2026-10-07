@@ -1,179 +1,346 @@
 /*
-  OwnFit site data
-  ----------------
+  OwnFit site data (English + Arabic)
+  -----------------------------------
   Edit this one file to update your WhatsApp number and your coaches.
-  Every page (home, service pages and coach profiles) reads from here.
+  Every page in both languages reads from here.
+
+  Each text field has an English version and an Arabic version ending in _ar
+  (name / name_ar, headline / headline_ar, bio / bio_ar ...).
+  If an Arabic field is missing, the Arabic pages show the English text.
 
   COACH FIELDS
-  id             unique, lowercase, no spaces (used in the profile link: coach.html#id)
+  id             unique, lowercase, no spaces (profile link: coach.html#id and coach-ar.html#id)
   service        one of: personal-training, boxing, kickboxing, muay-thai
   featured       true = shown as the "Top coach" for that service on the home page (one per service)
-  name, gender, headline, experience
-  photo          main photo, e.g. "assets/coaches/sara-photo.jpg" (portrait, about 800 x 1000 px)
-  certifications list of certificates
-  languages      list
-  areas          emirates / areas the coach covers
-  specialties    short list of what they focus on
-  bio            list of paragraphs
-  gallery        list of extra photos: { src: "assets/coaches/sara-1.jpg", alt: "Sara coaching pad work" }
-  videos         list of videos, either:
-                   { type: "youtube", id: "YOUTUBE_VIDEO_ID", title: "Combination drill" }
-                   { type: "file", src: "assets/videos/sara-intro.mp4", title: "Intro" }
+  name, gender, headline, experience        (+ _ar)
+  photo          main photo, e.g. "assets/coaches/sara.jpg" (portrait, about 800 x 1000 px)
+  certifications, languages, areas, specialties, bio   lists (+ _ar)
+  gallery        extra photos: { src: "assets/coaches/sara-1.jpg", alt: "Sara on the pads", alt_ar: "سارة أثناء التدريب" }
+  videos         { type: "youtube", id: "YOUTUBE_VIDEO_ID", title: "Combination drill", title_ar: "تمرين التركيبات" }
+                 { type: "file", src: "assets/videos/sara-intro.mp4", title: "Intro", title_ar: "تعريف" }
 */
 window.OWNFIT = {
   whatsapp: '971500000000', // your WhatsApp number: country code, no + or spaces
 
-  services: {
-    'personal-training': { name: 'Personal Training', page: 'personal-training.html' },
-    'boxing':            { name: 'Boxing',            page: 'boxing.html' },
-    'kickboxing':        { name: 'Kickboxing',        page: 'kickboxing.html' },
-    'muay-thai':         { name: 'Muay Thai',         page: 'muay-thai.html' }
-  },
-
   coaches: [
-    /* ---------- PERSONAL TRAINING ---------- */
+    /* ---------- PERSONAL-TRAINING ---------- */
     {
-      id: 'pt-coach-1', service: 'personal-training', featured: true,
-      name: '[Coach 1 name]', gender: '[Female / Male]',
-      headline: '[One line, e.g. Strength and fat-loss coach]',
-      experience: '[X] years',
-      photo: 'assets/coaches/placeholder.svg',
-      certifications: ['[Certification 1]', '[Certification 2]'],
-      languages: ['English', '[Arabic]'],
-      areas: ['Dubai'],
-      specialties: ['Strength', 'Fat loss', 'Mobility'],
-      bio: ['[Write two or three sentences about the coach: background, coaching style and the kind of clients they love working with.]',
-            '[A second paragraph about achievements, competitions or results.]'],
-      gallery: [
-        { src: 'assets/coaches/placeholder-wide.svg', alt: '[Photo description]' },
-        { src: 'assets/coaches/placeholder-wide.svg', alt: '[Photo description]' },
-        { src: 'assets/coaches/placeholder-wide.svg', alt: '[Photo description]' }
-      ],
+      id: "pt-coach-1",
+      service: "personal-training",
+      featured: true,
+      name: "[Coach 1 name]",
+      name_ar: "[اسم المدرب 1]",
+      gender: "[Female / Male]",
+      gender_ar: "[مدربة / مدرب]",
+      headline: "[One line, e.g. Strength and fat-loss coach]",
+      headline_ar: "[سطر واحد، مثال: مدرب قوة وخسارة دهون]",
+      experience: "[X] years",
+      experience_ar: "[X] سنوات",
+      photo: "assets/coaches/placeholder.svg",
+      certifications: ["[Certification 1]", "[Certification 2]"],
+      certifications_ar: ["[الشهادة 1]", "[الشهادة 2]"],
+      languages: ["English", "Arabic"],
+      languages_ar: ["الإنجليزية", "العربية"],
+      areas: ["Dubai"],
+      areas_ar: ["دبي"],
+      specialties: ["Strength", "Fat loss", "Mobility"],
+      specialties_ar: ["القوة", "خسارة الدهون", "المرونة"],
+      bio: ["[Two or three sentences about the coach: background, coaching style and the clients they love working with.]", "[Achievements, fights, titles or results.]"],
+      bio_ar: ["[جملتان أو ثلاث عن المدرب: خلفيته وأسلوبه في التدريب ونوع العملاء الذين يحب العمل معهم.]", "[الإنجازات أو النزالات أو الألقاب أو النتائج.]"],
+      gallery: [{"src": "assets/coaches/placeholder-wide.svg", "alt": "[Photo description]", "alt_ar": "[وصف الصورة]"}, {"src": "assets/coaches/placeholder-wide.svg", "alt": "[Photo description]", "alt_ar": "[وصف الصورة]"}, {"src": "assets/coaches/placeholder-wide.svg", "alt": "[Photo description]", "alt_ar": "[وصف الصورة]"}],
       videos: []
     },
     {
-      id: 'pt-coach-2', service: 'personal-training', featured: false,
-      name: '[Coach 2 name]', gender: '[Female / Male]',
-      headline: '[One line about this coach]', experience: '[X] years',
-      photo: 'assets/coaches/placeholder.svg',
-      certifications: ['[Certification]'], languages: ['English'], areas: ['Abu Dhabi'],
-      specialties: ['[Specialty]'], bio: ['[About this coach.]'], gallery: [], videos: []
+      id: "pt-coach-2",
+      service: "personal-training",
+      featured: false,
+      name: "[Coach 2 name]",
+      name_ar: "[اسم المدرب 2]",
+      gender: "[Female / Male]",
+      gender_ar: "[مدربة / مدرب]",
+      headline: "[One line about this coach]",
+      headline_ar: "[سطر واحد عن المدرب]",
+      experience: "[X] years",
+      experience_ar: "[X] سنوات",
+      photo: "assets/coaches/placeholder.svg",
+      certifications: ["[Certification]"],
+      certifications_ar: ["[الشهادة]"],
+      languages: ["English", "Arabic"],
+      languages_ar: ["الإنجليزية", "العربية"],
+      areas: ["Abu Dhabi"],
+      areas_ar: ["أبوظبي"],
+      specialties: ["[Specialty]"],
+      specialties_ar: ["[التخصص]"],
+      bio: ["[About this coach.]"],
+      bio_ar: ["[نبذة عن المدرب.]"],
+      gallery: [],
+      videos: []
     },
     {
-      id: 'pt-coach-3', service: 'personal-training', featured: false,
-      name: '[Coach 3 name]', gender: '[Female / Male]',
-      headline: '[One line about this coach]', experience: '[X] years',
-      photo: 'assets/coaches/placeholder.svg',
-      certifications: ['[Certification]'], languages: ['English'], areas: ['Sharjah'],
-      specialties: ['[Specialty]'], bio: ['[About this coach.]'], gallery: [], videos: []
+      id: "pt-coach-3",
+      service: "personal-training",
+      featured: false,
+      name: "[Coach 3 name]",
+      name_ar: "[اسم المدرب 3]",
+      gender: "[Female / Male]",
+      gender_ar: "[مدربة / مدرب]",
+      headline: "[One line about this coach]",
+      headline_ar: "[سطر واحد عن المدرب]",
+      experience: "[X] years",
+      experience_ar: "[X] سنوات",
+      photo: "assets/coaches/placeholder.svg",
+      certifications: ["[Certification]"],
+      certifications_ar: ["[الشهادة]"],
+      languages: ["English", "Arabic"],
+      languages_ar: ["الإنجليزية", "العربية"],
+      areas: ["Sharjah"],
+      areas_ar: ["الشارقة"],
+      specialties: ["[Specialty]"],
+      specialties_ar: ["[التخصص]"],
+      bio: ["[About this coach.]"],
+      bio_ar: ["[نبذة عن المدرب.]"],
+      gallery: [],
+      videos: []
     },
 
     /* ---------- BOXING ---------- */
     {
-      id: 'boxing-coach-1', service: 'boxing', featured: true,
-      name: '[Coach 1 name]', gender: '[Female / Male]',
-      headline: '[One line, e.g. Former amateur boxer, technique specialist]',
-      experience: '[X] years',
-      photo: 'assets/coaches/placeholder.svg',
-      certifications: ['[Certification 1]', '[Certification 2]'],
-      languages: ['English', '[Arabic]'],
-      areas: ['Dubai'],
-      specialties: ['Technique', 'Footwork', 'Fight fitness'],
-      bio: ['[Write two or three sentences about the coach.]', '[Fight record, titles or coaching highlights.]'],
-      gallery: [
-        { src: 'assets/coaches/placeholder-wide.svg', alt: '[Photo description]' },
-        { src: 'assets/coaches/placeholder-wide.svg', alt: '[Photo description]' },
-        { src: 'assets/coaches/placeholder-wide.svg', alt: '[Photo description]' }
-      ],
+      id: "boxing-coach-1",
+      service: "boxing",
+      featured: true,
+      name: "[Coach 1 name]",
+      name_ar: "[اسم المدرب 1]",
+      gender: "[Female / Male]",
+      gender_ar: "[مدربة / مدرب]",
+      headline: "[One line, e.g. Former amateur boxer, technique specialist]",
+      headline_ar: "[سطر واحد، مثال: ملاكم هاوٍ سابق ومتخصص في التقنية]",
+      experience: "[X] years",
+      experience_ar: "[X] سنوات",
+      photo: "assets/coaches/placeholder.svg",
+      certifications: ["[Certification 1]", "[Certification 2]"],
+      certifications_ar: ["[الشهادة 1]", "[الشهادة 2]"],
+      languages: ["English", "Arabic"],
+      languages_ar: ["الإنجليزية", "العربية"],
+      areas: ["Dubai"],
+      areas_ar: ["دبي"],
+      specialties: ["Technique", "Footwork", "Fight fitness"],
+      specialties_ar: ["التقنية", "حركة القدمين", "لياقة القتال"],
+      bio: ["[Two or three sentences about the coach: background, coaching style and the clients they love working with.]", "[Achievements, fights, titles or results.]"],
+      bio_ar: ["[جملتان أو ثلاث عن المدرب: خلفيته وأسلوبه في التدريب ونوع العملاء الذين يحب العمل معهم.]", "[الإنجازات أو النزالات أو الألقاب أو النتائج.]"],
+      gallery: [{"src": "assets/coaches/placeholder-wide.svg", "alt": "[Photo description]", "alt_ar": "[وصف الصورة]"}, {"src": "assets/coaches/placeholder-wide.svg", "alt": "[Photo description]", "alt_ar": "[وصف الصورة]"}, {"src": "assets/coaches/placeholder-wide.svg", "alt": "[Photo description]", "alt_ar": "[وصف الصورة]"}],
       videos: []
     },
     {
-      id: 'boxing-coach-2', service: 'boxing', featured: false,
-      name: '[Coach 2 name]', gender: '[Female / Male]',
-      headline: '[One line about this coach]', experience: '[X] years',
-      photo: 'assets/coaches/placeholder.svg',
-      certifications: ['[Certification]'], languages: ['English'], areas: ['Dubai'],
-      specialties: ['[Specialty]'], bio: ['[About this coach.]'], gallery: [], videos: []
+      id: "boxing-coach-2",
+      service: "boxing",
+      featured: false,
+      name: "[Coach 2 name]",
+      name_ar: "[اسم المدرب 2]",
+      gender: "[Female / Male]",
+      gender_ar: "[مدربة / مدرب]",
+      headline: "[One line about this coach]",
+      headline_ar: "[سطر واحد عن المدرب]",
+      experience: "[X] years",
+      experience_ar: "[X] سنوات",
+      photo: "assets/coaches/placeholder.svg",
+      certifications: ["[Certification]"],
+      certifications_ar: ["[الشهادة]"],
+      languages: ["English", "Arabic"],
+      languages_ar: ["الإنجليزية", "العربية"],
+      areas: ["Abu Dhabi"],
+      areas_ar: ["أبوظبي"],
+      specialties: ["[Specialty]"],
+      specialties_ar: ["[التخصص]"],
+      bio: ["[About this coach.]"],
+      bio_ar: ["[نبذة عن المدرب.]"],
+      gallery: [],
+      videos: []
     },
     {
-      id: 'boxing-coach-3', service: 'boxing', featured: false,
-      name: '[Coach 3 name]', gender: '[Female / Male]',
-      headline: '[One line about this coach]', experience: '[X] years',
-      photo: 'assets/coaches/placeholder.svg',
-      certifications: ['[Certification]'], languages: ['English'], areas: ['Abu Dhabi'],
-      specialties: ['[Specialty]'], bio: ['[About this coach.]'], gallery: [], videos: []
+      id: "boxing-coach-3",
+      service: "boxing",
+      featured: false,
+      name: "[Coach 3 name]",
+      name_ar: "[اسم المدرب 3]",
+      gender: "[Female / Male]",
+      gender_ar: "[مدربة / مدرب]",
+      headline: "[One line about this coach]",
+      headline_ar: "[سطر واحد عن المدرب]",
+      experience: "[X] years",
+      experience_ar: "[X] سنوات",
+      photo: "assets/coaches/placeholder.svg",
+      certifications: ["[Certification]"],
+      certifications_ar: ["[الشهادة]"],
+      languages: ["English", "Arabic"],
+      languages_ar: ["الإنجليزية", "العربية"],
+      areas: ["Sharjah"],
+      areas_ar: ["الشارقة"],
+      specialties: ["[Specialty]"],
+      specialties_ar: ["[التخصص]"],
+      bio: ["[About this coach.]"],
+      bio_ar: ["[نبذة عن المدرب.]"],
+      gallery: [],
+      videos: []
     },
 
     /* ---------- KICKBOXING ---------- */
     {
-      id: 'kickboxing-coach-1', service: 'kickboxing', featured: true,
-      name: '[Coach 1 name]', gender: '[Female / Male]',
-      headline: '[One line, e.g. Kickboxing coach for beginners to fighters]',
-      experience: '[X] years',
-      photo: 'assets/coaches/placeholder.svg',
-      certifications: ['[Certification 1]', '[Certification 2]'],
-      languages: ['English', '[Arabic]'],
-      areas: ['Dubai'],
-      specialties: ['Kicking technique', 'Combinations', 'Conditioning'],
-      bio: ['[Write two or three sentences about the coach.]', '[Fight record, belts or coaching highlights.]'],
-      gallery: [
-        { src: 'assets/coaches/placeholder-wide.svg', alt: '[Photo description]' },
-        { src: 'assets/coaches/placeholder-wide.svg', alt: '[Photo description]' },
-        { src: 'assets/coaches/placeholder-wide.svg', alt: '[Photo description]' }
-      ],
+      id: "kickboxing-coach-1",
+      service: "kickboxing",
+      featured: true,
+      name: "[Coach 1 name]",
+      name_ar: "[اسم المدرب 1]",
+      gender: "[Female / Male]",
+      gender_ar: "[مدربة / مدرب]",
+      headline: "[One line, e.g. Kickboxing coach for beginners to fighters]",
+      headline_ar: "[سطر واحد، مثال: مدرب كيك بوكسينغ من المبتدئين حتى المقاتلين]",
+      experience: "[X] years",
+      experience_ar: "[X] سنوات",
+      photo: "assets/coaches/placeholder.svg",
+      certifications: ["[Certification 1]", "[Certification 2]"],
+      certifications_ar: ["[الشهادة 1]", "[الشهادة 2]"],
+      languages: ["English", "Arabic"],
+      languages_ar: ["الإنجليزية", "العربية"],
+      areas: ["Dubai"],
+      areas_ar: ["دبي"],
+      specialties: ["Kicking technique", "Combinations", "Conditioning"],
+      specialties_ar: ["تقنية الركل", "التركيبات", "اللياقة"],
+      bio: ["[Two or three sentences about the coach: background, coaching style and the clients they love working with.]", "[Achievements, fights, titles or results.]"],
+      bio_ar: ["[جملتان أو ثلاث عن المدرب: خلفيته وأسلوبه في التدريب ونوع العملاء الذين يحب العمل معهم.]", "[الإنجازات أو النزالات أو الألقاب أو النتائج.]"],
+      gallery: [{"src": "assets/coaches/placeholder-wide.svg", "alt": "[Photo description]", "alt_ar": "[وصف الصورة]"}, {"src": "assets/coaches/placeholder-wide.svg", "alt": "[Photo description]", "alt_ar": "[وصف الصورة]"}, {"src": "assets/coaches/placeholder-wide.svg", "alt": "[Photo description]", "alt_ar": "[وصف الصورة]"}],
       videos: []
     },
     {
-      id: 'kickboxing-coach-2', service: 'kickboxing', featured: false,
-      name: '[Coach 2 name]', gender: '[Female / Male]',
-      headline: '[One line about this coach]', experience: '[X] years',
-      photo: 'assets/coaches/placeholder.svg',
-      certifications: ['[Certification]'], languages: ['English'], areas: ['Dubai'],
-      specialties: ['[Specialty]'], bio: ['[About this coach.]'], gallery: [], videos: []
+      id: "kickboxing-coach-2",
+      service: "kickboxing",
+      featured: false,
+      name: "[Coach 2 name]",
+      name_ar: "[اسم المدرب 2]",
+      gender: "[Female / Male]",
+      gender_ar: "[مدربة / مدرب]",
+      headline: "[One line about this coach]",
+      headline_ar: "[سطر واحد عن المدرب]",
+      experience: "[X] years",
+      experience_ar: "[X] سنوات",
+      photo: "assets/coaches/placeholder.svg",
+      certifications: ["[Certification]"],
+      certifications_ar: ["[الشهادة]"],
+      languages: ["English", "Arabic"],
+      languages_ar: ["الإنجليزية", "العربية"],
+      areas: ["Abu Dhabi"],
+      areas_ar: ["أبوظبي"],
+      specialties: ["[Specialty]"],
+      specialties_ar: ["[التخصص]"],
+      bio: ["[About this coach.]"],
+      bio_ar: ["[نبذة عن المدرب.]"],
+      gallery: [],
+      videos: []
     },
     {
-      id: 'kickboxing-coach-3', service: 'kickboxing', featured: false,
-      name: '[Coach 3 name]', gender: '[Female / Male]',
-      headline: '[One line about this coach]', experience: '[X] years',
-      photo: 'assets/coaches/placeholder.svg',
-      certifications: ['[Certification]'], languages: ['English'], areas: ['Ajman'],
-      specialties: ['[Specialty]'], bio: ['[About this coach.]'], gallery: [], videos: []
+      id: "kickboxing-coach-3",
+      service: "kickboxing",
+      featured: false,
+      name: "[Coach 3 name]",
+      name_ar: "[اسم المدرب 3]",
+      gender: "[Female / Male]",
+      gender_ar: "[مدربة / مدرب]",
+      headline: "[One line about this coach]",
+      headline_ar: "[سطر واحد عن المدرب]",
+      experience: "[X] years",
+      experience_ar: "[X] سنوات",
+      photo: "assets/coaches/placeholder.svg",
+      certifications: ["[Certification]"],
+      certifications_ar: ["[الشهادة]"],
+      languages: ["English", "Arabic"],
+      languages_ar: ["الإنجليزية", "العربية"],
+      areas: ["Sharjah"],
+      areas_ar: ["الشارقة"],
+      specialties: ["[Specialty]"],
+      specialties_ar: ["[التخصص]"],
+      bio: ["[About this coach.]"],
+      bio_ar: ["[نبذة عن المدرب.]"],
+      gallery: [],
+      videos: []
     },
 
-    /* ---------- MUAY THAI ---------- */
+    /* ---------- MUAY-THAI ---------- */
     {
-      id: 'muay-thai-coach-1', service: 'muay-thai', featured: true,
-      name: '[Coach 1 name]', gender: '[Female / Male]',
-      headline: '[One line, e.g. Muay Thai coach trained in Thailand]',
-      experience: '[X] years',
-      photo: 'assets/coaches/placeholder.svg',
-      certifications: ['[Certification 1]', '[Certification 2]'],
-      languages: ['English', '[Thai / Arabic]'],
-      areas: ['Dubai'],
-      specialties: ['Clinch', 'Elbows & knees', 'Thai conditioning'],
-      bio: ['[Write two or three sentences about the coach.]', '[Fight record, camps trained at or coaching highlights.]'],
-      gallery: [
-        { src: 'assets/coaches/placeholder-wide.svg', alt: '[Photo description]' },
-        { src: 'assets/coaches/placeholder-wide.svg', alt: '[Photo description]' },
-        { src: 'assets/coaches/placeholder-wide.svg', alt: '[Photo description]' }
-      ],
+      id: "muay-thai-coach-1",
+      service: "muay-thai",
+      featured: true,
+      name: "[Coach 1 name]",
+      name_ar: "[اسم المدرب 1]",
+      gender: "[Female / Male]",
+      gender_ar: "[مدربة / مدرب]",
+      headline: "[One line, e.g. Muay Thai coach trained in Thailand]",
+      headline_ar: "[سطر واحد، مثال: مدرب مواي تاي تدرّب في تايلاند]",
+      experience: "[X] years",
+      experience_ar: "[X] سنوات",
+      photo: "assets/coaches/placeholder.svg",
+      certifications: ["[Certification 1]", "[Certification 2]"],
+      certifications_ar: ["[الشهادة 1]", "[الشهادة 2]"],
+      languages: ["English", "Arabic"],
+      languages_ar: ["الإنجليزية", "العربية"],
+      areas: ["Dubai"],
+      areas_ar: ["دبي"],
+      specialties: ["Clinch", "Elbows & knees", "Thai conditioning"],
+      specialties_ar: ["الكلينش", "المرافق والركب", "اللياقة التايلندية"],
+      bio: ["[Two or three sentences about the coach: background, coaching style and the clients they love working with.]", "[Achievements, fights, titles or results.]"],
+      bio_ar: ["[جملتان أو ثلاث عن المدرب: خلفيته وأسلوبه في التدريب ونوع العملاء الذين يحب العمل معهم.]", "[الإنجازات أو النزالات أو الألقاب أو النتائج.]"],
+      gallery: [{"src": "assets/coaches/placeholder-wide.svg", "alt": "[Photo description]", "alt_ar": "[وصف الصورة]"}, {"src": "assets/coaches/placeholder-wide.svg", "alt": "[Photo description]", "alt_ar": "[وصف الصورة]"}, {"src": "assets/coaches/placeholder-wide.svg", "alt": "[Photo description]", "alt_ar": "[وصف الصورة]"}],
       videos: []
     },
     {
-      id: 'muay-thai-coach-2', service: 'muay-thai', featured: false,
-      name: '[Coach 2 name]', gender: '[Female / Male]',
-      headline: '[One line about this coach]', experience: '[X] years',
-      photo: 'assets/coaches/placeholder.svg',
-      certifications: ['[Certification]'], languages: ['English'], areas: ['Dubai'],
-      specialties: ['[Specialty]'], bio: ['[About this coach.]'], gallery: [], videos: []
+      id: "muay-thai-coach-2",
+      service: "muay-thai",
+      featured: false,
+      name: "[Coach 2 name]",
+      name_ar: "[اسم المدرب 2]",
+      gender: "[Female / Male]",
+      gender_ar: "[مدربة / مدرب]",
+      headline: "[One line about this coach]",
+      headline_ar: "[سطر واحد عن المدرب]",
+      experience: "[X] years",
+      experience_ar: "[X] سنوات",
+      photo: "assets/coaches/placeholder.svg",
+      certifications: ["[Certification]"],
+      certifications_ar: ["[الشهادة]"],
+      languages: ["English", "Arabic"],
+      languages_ar: ["الإنجليزية", "العربية"],
+      areas: ["Abu Dhabi"],
+      areas_ar: ["أبوظبي"],
+      specialties: ["[Specialty]"],
+      specialties_ar: ["[التخصص]"],
+      bio: ["[About this coach.]"],
+      bio_ar: ["[نبذة عن المدرب.]"],
+      gallery: [],
+      videos: []
     },
     {
-      id: 'muay-thai-coach-3', service: 'muay-thai', featured: false,
-      name: '[Coach 3 name]', gender: '[Female / Male]',
-      headline: '[One line about this coach]', experience: '[X] years',
-      photo: 'assets/coaches/placeholder.svg',
-      certifications: ['[Certification]'], languages: ['English'], areas: ['Abu Dhabi'],
-      specialties: ['[Specialty]'], bio: ['[About this coach.]'], gallery: [], videos: []
+      id: "muay-thai-coach-3",
+      service: "muay-thai",
+      featured: false,
+      name: "[Coach 3 name]",
+      name_ar: "[اسم المدرب 3]",
+      gender: "[Female / Male]",
+      gender_ar: "[مدربة / مدرب]",
+      headline: "[One line about this coach]",
+      headline_ar: "[سطر واحد عن المدرب]",
+      experience: "[X] years",
+      experience_ar: "[X] سنوات",
+      photo: "assets/coaches/placeholder.svg",
+      certifications: ["[Certification]"],
+      certifications_ar: ["[الشهادة]"],
+      languages: ["English", "Arabic"],
+      languages_ar: ["الإنجليزية", "العربية"],
+      areas: ["Sharjah"],
+      areas_ar: ["الشارقة"],
+      specialties: ["[Specialty]"],
+      specialties_ar: ["[التخصص]"],
+      bio: ["[About this coach.]"],
+      bio_ar: ["[نبذة عن المدرب.]"],
+      gallery: [],
+      videos: []
     }
   ]
 };
