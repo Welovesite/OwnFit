@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coach profile | OwnFit</title>
+<meta name="description" content="Meet your OwnFit coach: certifications, experience, photos and videos.">
+<meta name="theme-color" content="#D7192A">
+<meta property="og:title" content="Coach profile | OwnFit">
+<meta property="og:description" content="Meet your OwnFit coach: certifications, experience, photos and videos.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-home="index.html">
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="OwnFit home"><span class="own">OWN</span><span class="fit">FIT</span></a>
+    <div class="top-actions">
+      <button type="button" class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="main-nav">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu
+      </button>
+      <a class="btn btn-red" href="index.html#book"><span>Book<span class="hide-sm"> a session</span></span></a>
+    </div>
+    <nav class="nav" id="main-nav" aria-label="Main">
+      <a href="personal-training.html">Personal Training</a>
+      <a href="boxing.html">Boxing</a>
+      <a href="kickboxing.html">Kickboxing</a>
+      <a href="muay-thai.html">Muay Thai</a>
+      <a href="index.html#packages">Packages</a>
+      <a href="index.html#faq">FAQ</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap profile-wrap">
+  <ol class="crumbs profile-crumbs" aria-label="Breadcrumb"><li><a href="index.html">Home</a></li><li><a id="crumb-svc" href="index.html">Coaches</a></li><li id="crumb-name" aria-current="page">Coach</li></ol>
+  <div id="profile"></div>
+  <section class="p-section" id="more-coaches-wrap">
+    <h2 id="more-title">More coaches</h2>
+    <div class="coach-grid" id="more-coaches"></div>
+  </section>
+</main>
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo viewer">
+  <button type="button" class="lb-btn lb-close" id="lb-close" aria-label="Close">&times;</button>
+  <button type="button" class="lb-btn lb-prev" id="lb-prev" aria-label="Previous photo">&#8249;</button>
+  <img id="lb-img" alt="">
+  <button type="button" class="lb-btn lb-next" id="lb-next" aria-label="Next photo">&#8250;</button>
+  <p id="lb-cap"></p>
+</div>
+<footer>
+  <div class="wrap">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <a class="logo" href="index.html" aria-label="OwnFit home"><span class="own">OWN</span><span class="fit">FIT</span></a>
+      <p>Mobile personal training, boxing, kickboxing &amp; Muay Thai across the UAE.</p>
+      <p>WhatsApp: <span data-wa-num></span></p>
+      <p>&copy; <span id="yr"></span> OwnFit</p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="personal-training.html">Personal Training</a>
+      <a href="boxing.html">Boxing</a>
+      <a href="kickboxing.html">Kickboxing</a>
+      <a href="muay-thai.html">Muay Thai</a>
+      <a href="index.html#faq">FAQ</a>
+      <a href="index.html#book">Book</a>
+      <a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a>
+    </nav>
+  </div>
+</footer>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

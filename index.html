@@ -6,8 +6,8 @@
 <title>OwnFit | Mobile Personal Training, Boxing &amp; Muay Thai in the UAE</title>
 <meta name="description" content="OwnFit: certified coaches come to you anywhere in the UAE for personal training, boxing, kickboxing and Muay Thai.">
 <meta name="theme-color" content="#D7192A">
-<meta property="og:title" content="OwnFit">
-<meta property="og:description" content="Mobile personal training, boxing, kickboxing and Muay Thai across the UAE.">
+<meta property="og:title" content="OwnFit | Mobile Personal Training, Boxing &amp; Muay Thai in the UAE">
+<meta property="og:description" content="OwnFit: certified coaches come to you anywhere in the UAE for personal training, boxing, kickboxing and Muay Thai.">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,17 +15,24 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body data-home="index.html">
 <header class="top">
   <div class="wrap">
-    <a class="logo" href="#top" aria-label="OwnFit home"><span class="own">OWN</span><span class="fit">FIT</span></a>
-    <nav class="nav" aria-label="Main">
-      <a href="#disciplines">Disciplines</a>
-      <a href="#how">How it works</a>
-      <a href="#packages">Packages</a>
-      <a href="#faq">FAQ</a>
+    <a class="logo" href="index.html" aria-label="OwnFit home"><span class="own">OWN</span><span class="fit">FIT</span></a>
+    <div class="top-actions">
+      <button type="button" class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="main-nav">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu
+      </button>
+      <a class="btn btn-red" href="index.html#book"><span>Book<span class="hide-sm"> a session</span></span></a>
+    </div>
+    <nav class="nav" id="main-nav" aria-label="Main">
+      <a href="personal-training.html">Personal Training</a>
+      <a href="boxing.html">Boxing</a>
+      <a href="kickboxing.html">Kickboxing</a>
+      <a href="muay-thai.html">Muay Thai</a>
+      <a href="index.html#packages">Packages</a>
+      <a href="index.html#faq">FAQ</a>
     </nav>
-    <a class="btn btn-red" href="#book">Book a session</a>
   </div>
 </header>
 
@@ -93,7 +100,7 @@
           <div class="d-body">
             <h3>Personal Training</h3>
             <ul><li>Strength &amp; muscle building</li><li>Fat loss &amp; conditioning</li><li>Mobility &amp; posture</li></ul>
-            <a class="btn btn-red" href="#book" data-pick="Personal Training">Book this</a>
+            <a class="btn btn-red" href="personal-training.html">See personal training &amp; coaches</a>
           </div>
         </article>
         <article class="d-card">
@@ -103,7 +110,7 @@
           <div class="d-body">
             <h3>Boxing</h3>
             <ul><li>Stance, guard &amp; footwork</li><li>Punch combinations</li><li>Defence &amp; fight fitness</li></ul>
-            <a class="btn btn-red" href="#book" data-pick="Boxing">Book this</a>
+            <a class="btn btn-red" href="boxing.html">See boxing &amp; coaches</a>
           </div>
         </article>
         <article class="d-card">
@@ -113,7 +120,7 @@
           <div class="d-body">
             <h3>Kickboxing</h3>
             <ul><li>Punch &amp; kick combinations</li><li>High-intensity rounds</li><li>Power, cardio &amp; balance</li></ul>
-            <a class="btn btn-red" href="#book" data-pick="Kickboxing">Book this</a>
+            <a class="btn btn-red" href="kickboxing.html">See kickboxing &amp; coaches</a>
           </div>
         </article>
         <article class="d-card">
@@ -123,10 +130,24 @@
           <div class="d-body">
             <h3>Muay Thai</h3>
             <ul><li>Elbows, knees &amp; clinch</li><li>Kicks &amp; combinations</li><li>Conditioning the Thai way</li></ul>
-            <a class="btn btn-red" href="#book" data-pick="Muay Thai">Book this</a>
+            <a class="btn btn-red" href="muay-thai.html">See Muay Thai &amp; coaches</a>
           </div>
         </article>
       </div>
+    </div>
+  </section>
+
+
+  <section class="block paper" id="top-coaches-section">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <span class="label">Top coaches</span>
+          <h2>Meet the best in each discipline</h2>
+        </div>
+        <p>Our top-rated coach for each service. Tap a photo to see the full profile.</p>
+      </div>
+      <div class="coach-grid" id="top-coaches"></div>
     </div>
   </section>
 
@@ -246,6 +267,7 @@
         <div class="field"><label for="f-phone">Mobile number</label><input id="f-phone" name="phone" type="tel" autocomplete="tel" placeholder="+971 5X XXX XXXX" required></div>
         <div class="field"><label for="f-disc">Training</label>
           <select id="f-disc"><option>Personal Training</option><option>Boxing</option><option>Kickboxing</option><option>Muay Thai</option><option>A mix</option></select></div>
+        <div class="field"><label for="f-coachname">Coach</label><select id="f-coachname"></select></div>
         <div class="field"><label for="f-plan">Package</label>
           <select id="f-plan"><option>First Round</option><option>Fight Camp</option><option>Crew</option><option>Coach application</option><option>Not sure yet</option></select></div>
         <div class="field"><label for="f-emirate">Emirate</label>
@@ -271,23 +293,26 @@
     </div>
   </section>
 </main>
-
 <footer>
   <div class="wrap">
     <div style="display:flex;flex-direction:column;gap:10px">
-      <a class="logo" href="#top" aria-label="OwnFit home"><span class="own">OWN</span><span class="fit">FIT</span></a>
+      <a class="logo" href="index.html" aria-label="OwnFit home"><span class="own">OWN</span><span class="fit">FIT</span></a>
       <p>Mobile personal training, boxing, kickboxing &amp; Muay Thai across the UAE.</p>
-      <p>© <span id="yr"></span> OwnFit</p>
+      <p>WhatsApp: <span data-wa-num></span></p>
+      <p>&copy; <span id="yr"></span> OwnFit</p>
     </div>
     <nav aria-label="Footer">
-      <a href="#disciplines">Disciplines</a>
-      <a href="#packages">Packages</a>
-      <a href="#faq">FAQ</a>
-      <a href="#book">Book</a>
+      <a href="personal-training.html">Personal Training</a>
+      <a href="boxing.html">Boxing</a>
+      <a href="kickboxing.html">Kickboxing</a>
+      <a href="muay-thai.html">Muay Thai</a>
+      <a href="index.html#faq">FAQ</a>
+      <a href="index.html#book">Book</a>
       <a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a>
     </nav>
   </div>
 </footer>
+<script src="js/data.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
