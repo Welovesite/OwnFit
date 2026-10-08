@@ -21,7 +21,9 @@
       err: 'Add your name and mobile number so your coach can reach you.',
       msg: { hi: 'Hi OwnFit, I would like to book a session.', name: 'Name', mobile: 'Mobile', training: 'Training', coach: 'Coach',
              pkg: 'Package', loc: 'Location', time: 'Preferred time', pref: 'Coach preference', notes: 'Notes' },
-      copied: 'Copied', copy: 'Copy message', selected: 'Selected, press copy'
+      copied: 'Copied', copy: 'Copy message', selected: 'Selected, press copy',
+      achievements: 'Achievements', highlights: 'Coaching experience', topTitle: 'Top title', and: ' & ',
+      place: { 1: '1st', 2: '2nd', 3: '3rd' }
     },
     ar: {
       svc: { 'personal-training': 'التدريب الشخصي', 'boxing': 'الملاكمة', 'kickboxing': 'الكيك بوكسينغ', 'muay-thai': 'المواي تاي' },
@@ -37,7 +39,10 @@
       err: 'أضف اسمك ورقم جوالك ليتمكن مدربك من التواصل معك.',
       msg: { hi: 'مرحباً OwnFit، أرغب في حجز جلسة.', name: 'الاسم', mobile: 'الجوال', training: 'التدريب', coach: 'المدرب',
              pkg: 'الباقة', loc: 'الموقع', time: 'الوقت المفضل', pref: 'تفضيل المدرب', notes: 'ملاحظات' },
-      copied: 'تم النسخ', copy: 'نسخ الرسالة', selected: 'تم التحديد، اضغط نسخ'
+      copied: 'تم النسخ', copy: 'نسخ الرسالة', selected: 'تم التحديد، اضغط نسخ',
+      achievements: 'الإنجازات', highlights: 'الخبرة التدريبية', topTitle: 'أبرز إنجاز', and: ' و',
+      place: { 1: 'الأول', 2: 'الثاني', 3: 'الثالث' },
+      topCoach_f: 'أفضل مدربة', topSvcCoach_f: 'أفضل مدربة {s}', svcCoach_f: 'مدربة {s}'
     }
   };
   var t = I18N[LANG];
@@ -57,11 +62,16 @@
   function svcName(k) { return t.svc[k] || k; }
   function svcPage(k) { return k + SUF + '.html'; }
   function coachById(id) { return D.coaches.filter(function (c) { return c.id === id; })[0]; }
-  function coachesFor(k) {
-    return D.coaches.filter(function (c) { return c.service === k; })
-      .sort(function (a, b) { return (b.featured ? 1 : 0) - (a.featured ? 1 : 0); });
+  function svcs(c) { return (c.services || (c.service ? [c.service] : [])).filter(function (k) { return KEYS.indexOf(k) > -1; }); }
+  function byFeatured(a, b) { return (b.featured ? 1 : 0) - (a.featured ? 1 : 0); }
+  function coachesFor(k) { return D.coaches.filter(function (c) { return svcs(c).indexOf(k) > -1; }).sort(byFeatured); }
+  function svcNames(c) {
+    var n = svcs(c).map(svcName);
+    return n.length > 1 ? n.slice(0, -1).join(SEP) + t.and + n[n.length - 1] : (n[0] || '');
   }
-  function topCoach(k) { var l = coachesFor(k); return l.filter(function (c) { return c.featured; })[0] || l[0]; }
+  // Female wording where the language needs it (Arabic)
+  function F(c, key) { return (/^f/i.test(c.gender || '') && t[key + '_f']) ? t[key + '_f'] : t[key]; }
+  function has(v) { return Array.isArray(v) ? v.length > 0 : (v != null && String(v).trim() !== ''); }
   function profileUrl(c) { return 'coach' + SUF + '.html#' + c.id; }
   function bookUrl(c) { return HOME + '#book-coach-' + c.id; }
 
@@ -84,21 +94,23 @@
   function card(c, opts) {
     opts = opts || {};
     var name = L(c, 'name'), cert = (L(c, 'certifications') || [])[0] || '';
+    var ach = (c.achievements || []).filter(function (a) { return a.place === 1; })[0] || (c.achievements || [])[0];
+    var meta = [];
+    if (cert) meta.push([t.certified, cert]);
+    else if (ach) meta.push([t.topTitle, L(ach, 'text') + (ach.year ? ' (' + ach.year + ')' : '')]);
+    if (has(L(c, 'experience'))) meta.push([t.experience, L(c, 'experience')]);
+    if (has(L(c, 'languages'))) meta.push([t.languages, join(L(c, 'languages'))]);
     return '' +
       '<article class="c-card">' +
         '<a class="c-photo" href="' + profileUrl(c) + '" aria-label="' + esc(fmt(t.viewAria, { n: name })) + '">' +
           '<img src="' + esc(c.photo) + '" alt="' + esc(name) + '" loading="lazy">' +
-          (c.featured ? '<span class="c-badge label">' + esc(t.topCoach) + '</span>' : '') +
+          (c.featured ? '<span class="c-badge label">' + esc(F(c, 'topCoach')) + '</span>' : '') +
         '</a>' +
         '<div class="c-body">' +
-          (opts.showService ? '<a class="c-svc label" href="' + svcPage(c.service) + '">' + esc(svcName(c.service)) + '</a>' : '') +
+          '<p class="c-svc label">' + svcs(c).map(function (k) { return '<a href="' + svcPage(k) + '">' + esc(svcName(k)) + '</a>'; }).join(' · ') + '</p>' +
           '<h3><a href="' + profileUrl(c) + '">' + esc(name) + '</a></h3>' +
           '<p class="c-head">' + esc(L(c, 'headline')) + '</p>' +
-          '<ul class="c-meta">' +
-            (cert ? '<li><span>' + esc(t.certified) + '</span>' + esc(cert) + '</li>' : '') +
-            '<li><span>' + esc(t.experience) + '</span>' + esc(L(c, 'experience')) + '</li>' +
-            '<li><span>' + esc(t.languages) + '</span>' + esc(join(L(c, 'languages'))) + '</li>' +
-          '</ul>' +
+          (meta.length ? '<ul class="c-meta">' + meta.map(function (m) { return '<li><span>' + esc(m[0]) + '</span>' + esc(m[1]) + '</li>'; }).join('') + '</ul>' : '<div class="c-meta"></div>') +
           '<div class="c-actions">' +
             '<a class="btn btn-red" href="' + bookUrl(c) + '">' + esc(t.bookNow) + '</a>' +
             '<a class="btn btn-line" href="' + profileUrl(c) + '">' + esc(t.viewProfile) + '</a>' +
@@ -110,7 +122,10 @@
   function join(a) { return (a || []).join(SEP); }
 
   var top = $('top-coaches');
-  if (top) top.innerHTML = KEYS.map(function (k) { var c = topCoach(k); return c ? card(c, { showService: true }) : ''; }).join('');
+  if (top) {
+    var feat = D.coaches.filter(function (c) { return c.featured; });
+    top.innerHTML = feat.map(function (c) { return card(c); }).join('') || '<p class="empty">' + esc(t.empty) + '</p>';
+  }
 
   document.querySelectorAll('[data-coach-list]').forEach(function (el) {
     var list = coachesFor(el.getAttribute('data-coach-list'));
@@ -130,9 +145,9 @@
       $('more-coaches-wrap').hidden = true;
       return;
     }
-    var s = svcName(c.service), name = L(c, 'name');
-    document.title = fmt(t.pageTitle, { n: name, s: fmt(t.svcCoach, { s: s }) });
-    crumbSvc.parentNode.hidden = false; crumbSvc.href = svcPage(c.service); crumbSvc.textContent = s;
+    var s = svcNames(c), first = svcs(c)[0], name = L(c, 'name');
+    document.title = fmt(t.pageTitle, { n: name, s: fmt(F(c, 'svcCoach'), { s: s }) });
+    crumbSvc.parentNode.hidden = false; crumbSvc.href = svcPage(first); crumbSvc.textContent = svcName(first);
     crumbName.textContent = name;
     function list(a) { return (a || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join(''); }
     var gal = c.gallery || [];
@@ -146,37 +161,50 @@
     var videos = vids.length
       ? '<div class="videos">' + vids.map(function (v) {
           var title = L(v, 'title');
-          var inner = v.type === 'youtube'
+          var yt = v.type === 'youtube';
+          var inner = yt
             ? '<iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(v.id) + '" title="' + esc(title) + '" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
-            : '<video src="' + esc(v.src) + '" controls preload="metadata"></video>';
-          return '<figure class="v-item"><div class="v-frame">' + inner + '</div><figcaption>' + esc(title) + '</figcaption></figure>';
+            : '<video src="' + esc(v.src) + '"' + (v.poster ? ' poster="' + esc(v.poster) + '"' : '') + ' controls playsinline preload="metadata"></video>';
+          return '<figure class="v-item' + (yt ? '' : ' v-file') + '"><div class="v-frame">' + inner + '</div><figcaption>' + esc(title) + '</figcaption></figure>';
         }).join('') + '</div>'
       : '<div class="videos"><div class="v-item v-empty"><div class="v-frame"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/></svg><span>' + esc(t.videosSoon) + '</span></div></div></div>';
 
+    var facts = [];
+    if (has(L(c, 'experience'))) facts.push([t.experience, L(c, 'experience')]);
+    if (has(L(c, 'gender'))) facts.push([t.coach, L(c, 'gender')]);
+    if (has(L(c, 'languages'))) facts.push([t.languages, join(L(c, 'languages'))]);
+    if (has(L(c, 'areas'))) facts.push([t.covers, join(L(c, 'areas'))]);
+    var achs = c.achievements || [];
+    var achHtml = achs.length ? '<section class="p-section"><h2>' + esc(t.achievements) + '</h2><ol class="ach">' + achs.map(function (a) {
+      var p = a.place || 0;
+      return '<li class="ach-' + p + '"><span class="medal" aria-hidden="true">' + (p ? p : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3 7h7l-5.5 4.5L18.5 21 12 16.5 5.5 21l2-7.5L2 9h7z"/></svg>') + '</span>' +
+        '<span class="ach-text">' + esc(L(a, 'text')) + (p ? '<span class="sr"> (' + esc(t.place[p]) + ')</span>' : '') + '</span>' +
+        (a.year ? '<span class="ach-year">' + esc(a.year) + '</span>' : '') + '</li>';
+    }).join('') + '</ol></section>' : '';
+    var hl = L(c, 'highlights');
+    var hlHtml = has(hl) ? '<section class="p-section"><h2>' + esc(t.highlights) + '</h2><ul class="ticklist hl">' + list(hl) + '</ul></section>' : '';
     profile.innerHTML = '' +
       '<div class="profile">' +
         '<div class="p-photo"><img src="' + esc(c.photo) + '" alt="' + esc(name) + '">' +
-          (c.featured ? '<span class="c-badge label">' + esc(fmt(t.topSvcCoach, { s: s })) + '</span>' : '') + '</div>' +
+          (c.featured ? '<span class="c-badge label">' + esc(fmt(F(c, 'topSvcCoach'), { s: s })) + '</span>' : '') + '</div>' +
         '<div class="p-info">' +
-          '<a class="label p-svc" href="' + svcPage(c.service) + '">' + esc(fmt(t.svcCoach, { s: s })) + '</a>' +
+          '<a class="label p-svc" href="' + svcPage(first) + '">' + esc(fmt(F(c, 'svcCoach'), { s: s })) + '</a>' +
           '<h1>' + esc(name) + '</h1>' +
           '<p class="p-head">' + esc(L(c, 'headline')) + '</p>' +
-          '<dl class="facts">' +
-            '<div><dt>' + esc(t.experience) + '</dt><dd>' + esc(L(c, 'experience')) + '</dd></div>' +
-            '<div><dt>' + esc(t.coach) + '</dt><dd>' + esc(L(c, 'gender')) + '</dd></div>' +
-            '<div><dt>' + esc(t.languages) + '</dt><dd>' + esc(join(L(c, 'languages'))) + '</dd></div>' +
-            '<div><dt>' + esc(t.covers) + '</dt><dd>' + esc(join(L(c, 'areas'))) + '</dd></div>' +
-          '</dl>' +
-          '<div class="p-block"><h2 class="label">' + esc(t.certs) + '</h2><ul class="ticklist">' + list(L(c, 'certifications')) + '</ul></div>' +
-          '<div class="p-block"><h2 class="label">' + esc(t.specs) + '</h2><ul class="tags">' + list(L(c, 'specialties')) + '</ul></div>' +
+          (facts.length ? '<dl class="facts">' + facts.map(function (f) { return '<div><dt>' + esc(f[0]) + '</dt><dd>' + esc(f[1]) + '</dd></div>'; }).join('') + '</dl>' : '') +
+          (has(L(c, 'certifications')) ? '<div class="p-block"><h2 class="label">' + esc(t.certs) + '</h2><ul class="ticklist">' + list(L(c, 'certifications')) + '</ul></div>' : '') +
+          (has(L(c, 'specialties')) ? '<div class="p-block"><h2 class="label">' + esc(t.specs) + '</h2><ul class="tags">' + list(L(c, 'specialties')) + '</ul></div>' : '') +
           '<div class="c-actions"><a class="btn btn-red" href="' + bookUrl(c) + '">' + esc(fmt(t.bookWith, { n: name })) + '</a></div>' +
         '</div>' +
       '</div>' +
       '<section class="p-section"><h2>' + esc(t.about) + '</h2><div class="bio">' + (L(c, 'bio') || []).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') + '</div></section>' +
-      '<section class="p-section"><h2>' + esc(t.photos) + '</h2>' + gallery + '</section>' +
+      achHtml + hlHtml +
+      (gal.length ? '<section class="p-section"><h2>' + esc(t.photos) + '</h2>' + gallery + '</section>' : '') +
       '<section class="p-section"><h2>' + esc(t.videos) + '</h2>' + videos + '</section>';
 
-    var more = coachesFor(c.service).filter(function (o) { return o.id !== c.id; });
+    var seen = {}; seen[c.id] = 1;
+    var more = [];
+    svcs(c).forEach(function (k) { coachesFor(k).forEach(function (o) { if (!seen[o.id]) { seen[o.id] = 1; more.push(o); } }); });
     $('more-coaches-wrap').hidden = !more.length;
     $('more-title').textContent = fmt(t.more, { s: s });
     $('more-coaches').innerHTML = more.map(function (o) { return card(o); }).join('');
@@ -212,18 +240,17 @@
   var full = $('full');
   if (!full) return;
   var coachSel = $('f-coachname'), disc = $('f-disc');
-  coachSel.innerHTML = '<option value="">' + esc(t.anyCoach) + '</option>' + KEYS.map(function (k) {
-    return '<optgroup label="' + esc(svcName(k)) + '">' + coachesFor(k).map(function (c) {
-      return '<option value="' + esc(c.id) + '">' + esc(L(c, 'name')) + '</option>';
-    }).join('') + '</optgroup>';
+  coachSel.innerHTML = '<option value="">' + esc(t.anyCoach) + '</option>' + D.coaches.map(function (c) {
+    return '<option value="' + esc(c.id) + '">' + esc(L(c, 'name')) + ' – ' + esc(svcNames(c)) + '</option>';
   }).join('');
-  coachSel.addEventListener('change', function () { var c = coachById(coachSel.value); if (c) disc.value = c.service; });
+  function matchDisc(c) { if (svcs(c).indexOf(disc.value) < 0 && svcs(c)[0]) disc.value = svcs(c)[0]; }
+  coachSel.addEventListener('change', function () { var c = coachById(coachSel.value); if (c) matchDisc(c); });
 
   function goBook() { $('book').scrollIntoView(); $('f-name').focus({ preventScroll: true }); }
   function applyHash() {
     var h = location.hash, m;
     if ((m = h.match(/^#book-coach-(.+)$/))) {
-      var c = coachById(m[1]); if (c) { coachSel.value = c.id; disc.value = c.service; }
+      var c = coachById(m[1]); if (c) { coachSel.value = c.id; matchDisc(c); }
     } else if ((m = h.match(/^#book-svc-(.+)$/))) {
       if (KEYS.indexOf(m[1]) > -1) disc.value = m[1];
     } else return;
