@@ -35,7 +35,7 @@ All coaches live in `js/data.js`. Each coach is one block like this:
 
 ```js
 {
-  id: 'boxing-sara', service: 'boxing', featured: true,
+  id: 'sara-ahmed', services: ['boxing', 'kickboxing'], featured: true,
   name: 'Sara Ahmed', name_ar: 'سارة أحمد',
   gender: 'Female', gender_ar: 'مدربة',
   headline: 'Former amateur boxer, technique specialist',
@@ -54,9 +54,12 @@ All coaches live in `js/data.js`. Each coach is one block like this:
 ```
 
 - Every text field has an Arabic twin ending in `_ar` (`certifications_ar`, `languages_ar`, `areas_ar`, `specialties_ar`, ...). If you leave an Arabic field out, the Arabic page shows the English text.
-- `service` must be `personal-training`, `boxing`, `kickboxing` or `muay-thai`.
-- `featured: true` makes the coach the **Top coach** shown on the home page (one per service).
-- Put photos in `assets/coaches/` (portrait photos about 800 × 1000 px work best).
+- `services` is a list of `personal-training`, `boxing`, `kickboxing`, `muay-thai`. The coach appears on every service page listed.
+- `achievements` is a list like `{ text: 'UAE Muay Thai Champion', text_ar: 'بطل الإمارات في المواي تاي', year: 2024, place: 1 }` (place 1, 2, 3, or 0 for no medal).
+- `highlights` (+ `highlights_ar`) is the "Coaching experience" bullet list.
+- Any field you leave empty is hidden on the site.
+- `featured: true` shows the coach in **Top coaches** on the home page.
+- Put photos in `assets/coaches/` (portrait photos about 900 × 1200 px work best) and videos in `assets/videos/`. Keep each video under 25 MB so it can be uploaded through the GitHub website.
 - For YouTube videos, `id` is the part after `v=` in the video link. You can also upload a short `.mp4` and use `{ type: 'file', src: 'assets/videos/intro.mp4', title: 'Intro' }`.
 - To remove a coach, delete their block. To add one, copy a block and change the details.
 
