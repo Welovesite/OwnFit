@@ -311,3 +311,27 @@ footer p{opacity:.75;font-size:15px}
 [dir="rtl"] .step .n,[dir="rtl"] .flow li::before{font-family:'Anton','Cairo',sans-serif;font-weight:400}
 .ltr{direction:ltr;unicode-bidi:isolate}
 .d-art{text-decoration:none}
+
+/* ===== Achievements ===== */
+.ach{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-top:2px solid var(--ink)}
+.ach li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.medal{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'Anton','Cairo',sans-serif;font-size:18px;border-radius:50%;background:var(--paper);color:var(--ink);border:2px solid var(--ink)}
+.ach-1 .medal{background:var(--red);border-color:var(--red);color:var(--on-red)}
+.ach-2 .medal{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.ach-3 .medal{background:var(--bg);color:var(--red);border-color:var(--red)}
+.ach-text{font-weight:600}
+.ach-year{font-family:var(--font-label);font-weight:700;color:var(--red);font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.hl{max-width:80ch}
+.c-svc a{color:inherit;text-decoration:none}
+.c-svc a:hover{text-decoration:underline}
+.c-svc{margin:0}
+.v-file .v-frame{aspect-ratio:9/16;max-height:640px;width:auto;background:var(--ink)}
+.videos:has(.v-file){grid-template-columns:repeat(auto-fill,minmax(260px,360px))}
+
+/* fixes */
+.facts > div:last-child:nth-child(odd){grid-column:1/-1}
+.c-meta li{display:flex;flex-direction:column;gap:0}
+.ach{border-top:0}
+#top-coaches{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+#top-coaches:has(> :only-child), #top-coaches:has(> :nth-child(2):last-child){grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
