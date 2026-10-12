@@ -127,7 +127,12 @@ window.OWNFIT = {
         { text: 'UAE Muay Thai Open Championship U23, Abu Dhabi', text_ar: 'بطولة الإمارات المفتوحة للمواي تاي تحت 23 سنة، أبوظبي', year: 2023, place: 2 }
       ],
       gallery: [],
-      videos: []
+      videos: [
+        { type: 'file', src: 'assets/videos/fatima-el-ftam-1.mp4', poster: 'assets/videos/fatima-el-ftam-1.jpg',
+          title: 'Pad work session: boxing combinations', title_ar: 'جلسة تدريب على الوسادات: تركيبات الملاكمة' },
+        { type: 'file', src: 'assets/videos/fatima-el-ftam-2.mp4', poster: 'assets/videos/fatima-el-ftam-2.jpg',
+          title: 'Outdoor group session: pad work', title_ar: 'جلسة جماعية في الهواء الطلق: تدريب على الوسادات' }
+      ]
     },
 
     /* ================= MEHDI FICHKOU ================= */
@@ -184,7 +189,10 @@ window.OWNFIT = {
         { text: 'Professional Muay Thai fighter', text_ar: 'مقاتل مواي تاي محترف', place: 0 }
       ],
       gallery: [],
-      videos: []
+      videos: [
+        { type: 'file', src: 'assets/videos/mehdi-fichkou-1.mp4', poster: 'assets/videos/mehdi-fichkou-1.jpg',
+          title: 'Outdoor pad work session in Downtown Dubai', title_ar: 'جلسة تدريب على الوسادات في الهواء الطلق في وسط دبي' }
+      ]
     }
   ]
 };
