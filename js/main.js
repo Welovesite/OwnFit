@@ -274,6 +274,13 @@
     a.addEventListener('click', function () { $('f-plan').value = a.dataset.plan; });
   });
 
+  // Spam trap: a hidden field people never see (bots fill it in), plus the time the form was opened
+  var openedAt = Date.now(), trap = document.createElement('input');
+  trap.type = 'text'; trap.name = 'website'; trap.tabIndex = -1; trap.autocomplete = 'off';
+  trap.setAttribute('aria-hidden', 'true');
+  trap.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;opacity:0';
+  full.appendChild(trap);
+  
   function txt(sel) { return sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : ''; }
   full.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -309,7 +316,8 @@
           name: name, mobile: phone, training: txt(disc),
           coach: coach ? coach.name : 'Any coach',
           package: txt($('f-plan')), emirate: txt($('f-emirate')), area: $('f-area').value.trim(),
-          time: txt($('f-time')), preference: txt($('f-coach')), notes: notes
+          time: txt($('f-time')), preference: txt($('f-coach')), notes: notes,
+          website: trap.value, elapsed: String(Date.now() - openedAt)
         }) });
       } catch (x) { /* never block the WhatsApp step */ }
     }
