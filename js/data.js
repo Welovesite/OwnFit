@@ -24,7 +24,7 @@
                 { type: 'youtube', id: 'YOUTUBE_VIDEO_ID', title: '...', title_ar: '...' }
 */
 window.OWNFIT = {
-  whatsapp: '971500000000', // your WhatsApp number: country code, no + or spaces
+  whatsapp: '971525700118', // your WhatsApp number: country code, no + or spaces
 
   coaches: [
     /* ================= SALAH EDDINE ================= */
