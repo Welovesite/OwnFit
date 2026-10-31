@@ -23,6 +23,12 @@ Mobile personal training, boxing, kickboxing and Muay Thai across the UAE.
 - **Packages** (individual, one-to-one): 12 sessions AED 3,500 · 16 sessions AED 4,200 · 24 sessions AED 6,000. Edit them in the `#packages` section and the "Package" dropdown of `index.html` and `index-ar.html`.
 - **Instagram** links point to https://www.instagram.com/boxing__fichkou/ on every page.
 
+## Booking records (Google Sheet)
+
+Every request sent from the booking form is also saved as a new row in the **OwnFit Bookings** Google Sheet (date and time in Dubai, name, mobile, training, coach, package, location, time, notes, and a Status column you can update: New / Contacted / Booked / Cancelled).
+
+Setup is in `google-apps-script/booking-sheet.gs`: paste it into the sheet's Apps Script editor, deploy it as a web app, and put the web app URL in `js/data.js` as `bookingSheet`. Until that URL is filled in, the form still opens WhatsApp as normal; it just doesn't save a copy.
+
 ## Languages
 
 Every page has an English and an Arabic version. The **العربية / English** button at the top switches to the same page in the other language (it keeps the coach you are looking at). Arabic visitors who fill in the booking form send their WhatsApp request in Arabic.
