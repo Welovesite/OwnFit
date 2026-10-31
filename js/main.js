@@ -301,6 +301,18 @@
     var text = lines.join('\n');
     $('msg').textContent = text;
     $('wa-link').href = 'https://wa.me/' + D.whatsapp + '?text=' + encodeURIComponent(text);
+    // Keep a record of the request in the OwnFit Bookings Google Sheet (see README)
+    if (D.bookingSheet) {
+      try {
+        fetch(D.bookingSheet, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({
+          language: LANG === 'ar' ? 'Arabic' : 'English',
+          name: name, mobile: phone, training: txt(disc),
+          coach: coach ? coach.name : 'Any coach',
+          package: txt($('f-plan')), emirate: txt($('f-emirate')), area: $('f-area').value.trim(),
+          time: txt($('f-time')), preference: txt($('f-coach')), notes: notes
+        }) });
+      } catch (x) { /* never block the WhatsApp step */ }
+    }
     $('done').hidden = false;
     $('done').scrollIntoView({ block: 'nearest' });
   });

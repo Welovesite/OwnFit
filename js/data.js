@@ -25,6 +25,7 @@
 */
 window.OWNFIT = {
   whatsapp: '971525700118', // your WhatsApp number: country code, no + or spaces
+  bookingSheet: '', // Google Apps Script web app URL that saves each booking to the OwnFit Bookings sheet
 
   coaches: [
     /* ================= SALAH EDDINE ================= */
