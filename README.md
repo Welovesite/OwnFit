@@ -17,11 +17,11 @@ Mobile personal training, boxing, kickboxing and Muay Thai across the UAE.
 | `assets/favicon.svg` | Browser tab icon |
 | `.nojekyll` | Tells GitHub Pages to serve the files as they are |
 
-## Before going live
+## Packages, WhatsApp and Instagram
 
-1. **WhatsApp number** – open `js/data.js` and replace `971500000000` with your number (country code, no `+` or spaces).
-2. **Prices** – in `index.html` search for `[price]` and `[number]`, and in `index-ar.html` search for `[السعر]` and `[العدد]`, and fill them in.
-3. **Instagram** – in all pages, replace `https://www.instagram.com/` with your profile link.
+- **WhatsApp number** is set in `js/data.js` (`971525700118`). Every booking opens a WhatsApp chat to this number with the chosen package, coach, area and time filled in.
+- **Packages** (individual, one-to-one): 12 sessions AED 3,500 · 16 sessions AED 4,200 · 24 sessions AED 6,000. Edit them in the `#packages` section and the "Package" dropdown of `index.html` and `index-ar.html`.
+- **Instagram** links point to https://www.instagram.com/boxing__fichkou/ on every page.
 
 ## Languages
 
