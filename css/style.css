@@ -322,9 +322,7 @@ footer p{opacity:.75;font-size:15px}
 .ach{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-top:2px solid var(--ink)}
 .ach li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
 .medal{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'Anton','Cairo',sans-serif;font-size:18px;border-radius:50%;background:var(--paper);color:var(--ink);border:2px solid var(--ink)}
-.ach-1 .medal{background:var(--red);border-color:var(--red);color:var(--on-red)}
-.ach-2 .medal{background:var(--ink);border-color:var(--ink);color:var(--bg)}
-.ach-3 .medal{background:var(--bg);color:var(--red);border-color:var(--red)}
+.medal{font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;font-size:28px;line-height:1;background:none;border:0;border-radius:0}
 .ach-text{font-weight:600}
 .ach-year{font-family:var(--font-label);font-weight:700;color:var(--red);font-variant-numeric:tabular-nums}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
