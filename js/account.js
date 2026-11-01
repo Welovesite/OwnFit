@@ -1,10 +1,12 @@
 import {
-  auth, db, $, esc, onAuthStateChanged, signOut, ensureProfile, roleOf, fmtDate, remaining, friendlyError, localNow,
-  collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
+  auth, db, $, esc, onAuthStateChanged, signOut, ensureProfile, roleOf, isOwner, fmtDate, remaining, friendlyError, localNow,
+  collection, query, where, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
 } from './fb.js';
 
 const app = $('app');
 let me = null, profile = null;
+// who = the account shown on this page. Normally yourself; the super admin can "View as" anyone.
+let who = null, viewing = false;
 
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => { t.hidden = true; }, 3200); }
 $('logout').onclick = async () => { await signOut(auth); location.replace('login.html'); };
@@ -16,11 +18,13 @@ async function list(col, field, value) {
 const byDate = (a, b) => String(a.date || '').localeCompare(String(b.date || ''));
 
 function header(roleLabel) {
-  const name = esc(profile.name || me.displayName || me.email);
-  return '<div class="who"><div><span class="label">' + roleLabel + '</span><h1>Hi, ' + name.split(' ')[0] + '</h1>' +
-    '<p class="muted small">' + esc(me.email) + '</p></div>' +
-    (roleOf(me, profile) === 'admin' ? '<a class="btn btn-red" href="admin.html">Open admin</a>' : '') + '</div>' +
-    (!me.emailVerified && me.providerData.some((p) => p.providerId === 'password')
+  const name = esc(profile.name || who.name || who.email);
+  const banner = viewing ? '<div class="viewas"><span>Viewing as <strong>' + esc(profile.name || who.email) + '</strong> (' + esc(roleLabel.toLowerCase()) + ') – this is exactly what they see.</span>' +
+    '<a href="admin.html">Back to admin</a></div>' : '';
+  return banner + '<div class="who"><div><span class="label">' + roleLabel + '</span><h1>Hi, ' + name.split(' ')[0] + '</h1>' +
+    '<p class="muted small">' + esc(who.email) + '</p></div>' +
+    (!viewing && roleOf(me, profile) === 'admin' ? '<a class="btn btn-red" href="admin.html">Open admin</a>' : '') + '</div>' +
+    (!viewing && !me.emailVerified && me.providerData.some((p) => p.providerId === 'password')
       ? '<p class="note">Please confirm your email address. We sent you a link when you signed up (check spam).</p>' : '');
 }
 
@@ -36,7 +40,7 @@ function sessionRow(s, canEdit) {
 
 /* ---------------- Client ---------------- */
 async function renderClient() {
-  const [pkgs, sessions] = await Promise.all([list('packages', 'clientUid', me.uid), list('sessions', 'clientUid', me.uid)]);
+  const [pkgs, sessions] = await Promise.all([list('packages', 'clientUid', who.uid), list('sessions', 'clientUid', who.uid)]);
   sessions.sort(byDate);
   const now = localNow();
   const active = pkgs.filter((p) => p.status !== 'cancelled');
@@ -127,9 +131,20 @@ onAuthStateChanged(auth, async (user) => {
   me = user; $('logout').hidden = false;
   try {
     profile = (await ensureProfile(user)).profile;
-    const role = roleOf(user, profile);
+    who = { uid: user.uid, email: user.email, name: user.displayName };
+    const as = new URLSearchParams(location.search).get('as');
+    if (as && isOwner(user)) { // super admin "View as"
+      const snap = await getDoc(doc(db, 'users', as));
+      if (!snap.exists()) { app.innerHTML = '<p class="err">That account no longer exists.</p><p><a href="admin.html">Back to admin</a></p>'; return; }
+      profile = { id: snap.id, ...snap.data() };
+      if (profile.role === 'admin') { location.replace('admin.html?as=' + encodeURIComponent(as)); return; }
+      who = { uid: snap.id, email: profile.email, name: profile.name };
+      viewing = true;
+    }
+    const role = viewing ? (profile.status !== 'active' ? 'blocked' : profile.role || 'client') : roleOf(user, profile);
     if (role === 'blocked') {
-      app.innerHTML = '<h1>Account paused</h1><p>Your account is not active. Contact OwnFit on <a href="https://wa.me/971525700118">WhatsApp</a>.</p>';
+      app.innerHTML = (viewing ? '<div class="viewas"><span>Viewing as <strong>' + esc(profile.name || who.email) + '</strong> – this account is inactive.</span><a href="admin.html">Back to admin</a></div>' : '') +
+        '<h1>Account paused</h1><p>Your account is not active. Contact OwnFit on <a href="https://wa.me/971525700118">WhatsApp</a>.</p>';
       return;
     }
     if (role === 'coach' && profile.coachId) await renderCoach();

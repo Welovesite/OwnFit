@@ -36,8 +36,16 @@ export function esc(v) {
 }
 export function isOwner(user) { return !!user && user.email === OWNER_EMAIL && user.emailVerified; }
 
+// Areas the super admin can switch on/off for each admin
+export const PERMS = [['users', 'Users & access'], ['sessions', 'Sessions & packages'], ['coaches', 'Coaches & website'], ['bookings', 'Bookings sheet']];
+export const ALL_PERMS = { users: true, sessions: true, coaches: true, bookings: true };
+
 // Loads (or on first login creates) the user's profile. Returns { profile, isNew }.
+// The super admin has no profile document, so no other admin can ever see that account.
 export async function ensureProfile(user, extra = {}) {
+  if (isOwner(user)) {
+    return { profile: { id: user.uid, email: user.email, name: user.displayName || 'Super admin', role: 'admin', status: 'active', super: true, perms: ALL_PERMS }, isNew: false };
+  }
   const ref = doc(db, 'users', user.uid);
   const snap = await getDoc(ref);
   if (snap.exists()) {

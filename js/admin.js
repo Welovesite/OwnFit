@@ -1,19 +1,26 @@
 import {
   auth, db, $, esc, onAuthStateChanged, signOut, ensureProfile, roleOf, isOwner, fmtDate, remaining, friendlyError,
-  backend, SHEET_URL, OWNER_EMAIL, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc,
-  serverTimestamp, writeBatch
+  backend, SHEET_URL, OWNER_EMAIL, PERMS, ALL_PERMS, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc,
+  serverTimestamp, writeBatch, query, where
 } from './fb.js';
 
 const app = $('app');
 const SERVICES = { 'personal-training': 'Personal Training', boxing: 'Boxing', kickboxing: 'Kickboxing', 'muay-thai': 'Muay Thai' };
-let me = null, users = [], coaches = [], packages = [], sessions = [], current = 'users';
+let me = null, users = [], coaches = [], packages = [], sessions = [], current = null;
+// SUPER = signed in as the super admin and not previewing another admin.
+// perms = what the current view may use; viewAs = the admin being previewed (super admin only).
+let SUPER = false, perms = {}, viewAs = null;
+const can = (p) => !!perms[p];
 
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => { t.hidden = true; }, 3500); }
 $('logout').onclick = async () => { await signOut(auth); location.replace('login.html'); };
 
 async function all(col) { return (await getDocs(collection(db, col))).docs.map((d) => ({ id: d.id, ...d.data() })); }
 async function loadAll() {
-  [users, coaches, packages, sessions] = await Promise.all([all('users'), all('coaches'), all('packages'), all('sessions')]);
+  const people = can('users') || can('sessions');
+  [users, coaches, packages, sessions] = await Promise.all([
+    people ? all('users') : [], all('coaches'), people ? all('packages') : [], people ? all('sessions') : []]);
+  users = users.filter((u) => u.email !== OWNER_EMAIL); // the super admin never appears in lists
   users.sort((a, b) => String(a.name || a.email).localeCompare(String(b.name || b.email)));
   coaches.sort((a, b) => (a.order ?? 99) - (b.order ?? 99) || String(a.name).localeCompare(String(b.name)));
 }
@@ -21,42 +28,98 @@ const coachName = (id) => (coaches.find((c) => c.id === id) || {}).name || id ||
 const userLabel = (u) => (u.name ? u.name + ' — ' : '') + u.email;
 
 function shell() {
-  const tabs = [['users', 'Users & access'], ['packages', 'Sessions & packages'], ['coaches', 'Coaches'], ['bookings', 'Bookings']];
-  app.innerHTML = '<div class="who"><div><span class="label">Admin</span><h1>OwnFit admin</h1><p class="muted small">' + esc(me.email) + '</p></div>' +
-    '<a class="btn btn-line" href="account.html">My account view</a></div>' +
-    '<div class="tabs" role="tablist" style="margin-bottom:24px">' + tabs.map(([k, l]) =>
+  const tabs = [['users', 'Users & access', 'users'], ['packages', 'Sessions & packages', 'sessions'], ['coaches', 'Coaches', 'coaches'], ['bookings', 'Bookings', 'bookings']]
+    .filter((t) => can(t[2]));
+  if (!tabs.some((t) => t[0] === current)) current = tabs.length ? tabs[0][0] : null;
+  const banner = viewAs ? '<div class="viewas"><span>Viewing as <strong>' + esc(viewAs.name || viewAs.email) + '</strong> (admin) – this is exactly what they see.</span>' +
+    '<a href="admin.html">Back to my admin</a></div>' : '';
+  const who = viewAs || { email: me.email };
+  app.innerHTML = banner + '<div class="who"><div><span class="label">' + (SUPER ? 'Super admin' : 'Admin') + '</span><h1>OwnFit admin</h1><p class="muted small">' + esc(who.email) + '</p></div>' +
+    (viewAs ? '' : '<a class="btn btn-line" href="account.html">My account view</a>') + '</div>' +
+    (tabs.length ? '<div class="tabs" role="tablist" style="margin-bottom:24px">' + tabs.map(([k, l]) =>
       '<button type="button" role="tab" data-tab="' + k + '" aria-selected="' + (k === current) + '">' + l + '</button>').join('') + '</div>' +
-    '<div id="panel"></div>';
+      '<div id="panel"></div>'
+      : '<div class="card"><h2>No access yet</h2><p>Your admin account has no areas switched on. Ask the super admin to give you access.</p></div>');
   app.querySelectorAll('[data-tab]').forEach((b) => { b.onclick = () => { current = b.dataset.tab; shell(); }; });
-  ({ users: renderUsers, packages: renderPackages, coaches: renderCoaches, bookings: renderBookings })[current]();
+  if (current) ({ users: renderUsers, packages: renderPackages, coaches: renderCoaches, bookings: renderBookings })[current]();
 }
 
 /* ======================= Users & access ======================= */
 function renderUsers() {
   const coachOpts = (sel) => '<option value="">—</option>' + coaches.map((c) => '<option value="' + esc(c.id) + '"' + (c.id === sel ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('');
+  const opt = (v, l, cur) => '<option value="' + v + '"' + (cur === v ? ' selected' : '') + '>' + l + '</option>';
   const rows = users.map((u) => {
-    const owner = u.email === OWNER_EMAIL;
+    const isAdm = u.role === 'admin', locked = isAdm && !SUPER; // only the super admin can change admins
     const pk = packages.filter((p) => p.clientUid === u.id && p.status !== 'cancelled').length;
+    const permText = isAdm ? '<br><span class="small muted">' + (PERMS.filter(([k]) => (u.perms || {})[k]).map(([, l]) => l).join(', ') || 'No access') + '</span>' : '';
     return '<tr data-uid="' + esc(u.id) + '"><td><strong>' + esc(u.name || '—') + '</strong><br><span class="small muted">' + esc(u.email) + '</span>' +
       (u.phone ? '<br><span class="small muted">' + esc(u.phone) + '</span>' : '') + '</td>' +
-      '<td>' + (owner ? '<span class="pill admin">owner</span>' :
-        '<select data-f="role"><option value="client"' + (u.role === 'client' ? ' selected' : '') + '>Client</option><option value="coach"' + (u.role === 'coach' ? ' selected' : '') + '>Coach</option><option value="admin"' + (u.role === 'admin' ? ' selected' : '') + '>Admin</option></select>') + '</td>' +
-      '<td>' + (owner ? '' : '<select data-f="coachId">' + coachOpts(u.coachId) + '</select>') + '</td>' +
-      '<td>' + (owner ? '<span class="pill client">active</span>' : '<select data-f="status"><option value="active"' + (u.status !== 'blocked' ? ' selected' : '') + '>Active</option><option value="blocked"' + (u.status === 'blocked' ? ' selected' : '') + '>Blocked</option></select>') + '</td>' +
-      '<td>' + pk + '</td><td class="small muted">' + esc(u.provider === 'google.com' ? 'Google' : 'Email') + '</td></tr>';
+      '<td>' + (locked ? '<span class="pill admin">admin</span>' :
+        '<select data-f="role">' + opt('client', 'Client', u.role) + opt('coach', 'Coach', u.role) + (SUPER ? opt('admin', 'Admin', u.role) : '') + '</select>') + permText + '</td>' +
+      '<td>' + (isAdm ? '' : '<select data-f="coachId">' + coachOpts(u.coachId) + '</select>') + '</td>' +
+      '<td>' + (locked ? '<span class="pill ' + (u.status === 'blocked' ? 'blocked' : 'client') + '">' + (u.status === 'blocked' ? 'inactive' : 'active') + '</span>'
+        : '<select data-f="status">' + opt('active', 'Active', u.status === 'blocked' ? '' : 'active') + opt('blocked', 'Inactive', u.status) + '</select>') + '</td>' +
+      '<td>' + pk + '</td><td class="small muted">' + esc(u.provider === 'google.com' ? 'Google' : 'Email') + '</td>' +
+      (SUPER ? '<td><span class="row" style="gap:6px;flex-wrap:nowrap">' +
+        (isAdm ? '<button class="btn btn-line btn-sm" data-perm="' + esc(u.id) + '">Access</button>' : '') +
+        '<a class="btn btn-line btn-sm" href="' + (isAdm ? 'admin.html' : 'account.html') + '?as=' + encodeURIComponent(u.id) + '">View as</a>' +
+        '<button class="link small" data-deluser="' + esc(u.id) + '">Delete</button></span></td>' : '') + '</tr>';
   }).join('');
-  $('panel').innerHTML = '<p class="muted">Everyone who signs in appears here as a <strong>client</strong>. To give a trainer their dashboard, set Role = Coach and link them to their coach profile. Blocked users can’t see anything.</p>' +
-    '<div class="table-wrap"><table class="t"><thead><tr><th>User</th><th>Role</th><th>Coach profile (for coaches)</th><th>Access</th><th>Packages</th><th>Login</th></tr></thead><tbody>' +
-    (rows || '<tr><td colspan="6" class="muted">No users yet.</td></tr>') + '</tbody></table></div>';
+  $('panel').innerHTML = '<p class="muted">Everyone who signs in appears here as a <strong>client</strong>. To give a trainer their dashboard, set Role = Coach and link them to their coach profile. Inactive users can’t see anything.' +
+    (SUPER ? ' As super admin you can make admins, choose what each admin can access, view any account as that person, and delete accounts.' : '') + '</p>' +
+    '<div class="table-wrap"><table class="t"><thead><tr><th>User</th><th>Role</th><th>Coach profile (for coaches)</th><th>Access</th><th>Packages</th><th>Login</th>' + (SUPER ? '<th></th>' : '') + '</tr></thead><tbody>' +
+    (rows || '<tr><td colspan="7" class="muted">No users yet.</td></tr>') + '</tbody></table></div><div id="u-detail" style="margin-top:24px"></div>';
   $('panel').querySelectorAll('select[data-f]').forEach((s) => {
     s.onchange = async () => {
       const uid = s.closest('tr').dataset.uid, f = s.dataset.f, u = users.find((x) => x.id === uid);
       const patch = { [f]: s.value || null };
+      if (f === 'role' && s.value === 'admin' && !u.perms) patch.perms = ALL_PERMS;
       if (f === 'role' && s.value === 'coach' && !u.coachId) toast('Now pick which coach profile this person is.');
-      try { await updateDoc(doc(db, 'users', uid), patch); Object.assign(u, patch); toast('Saved'); }
-      catch (x) { toast(friendlyError(x)); }
+      try {
+        await updateDoc(doc(db, 'users', uid), patch); Object.assign(u, patch); toast('Saved');
+        if (f === 'role') { renderUsers(); if (s.value === 'admin') editPerms(uid); }
+      } catch (x) { toast(friendlyError(x)); }
     };
   });
+  $('panel').querySelectorAll('[data-perm]').forEach((b) => { b.onclick = () => editPerms(b.dataset.perm); });
+  $('panel').querySelectorAll('[data-deluser]').forEach((b) => { b.onclick = () => deleteUser(b.dataset.deluser); });
+}
+
+// Super admin: choose which areas an admin can open
+function editPerms(uid) {
+  const u = users.find((x) => x.id === uid); if (!u || !SUPER) return;
+  const p = u.perms || {};
+  $('u-detail').innerHTML = '<form id="perm-form" class="card hot"><h2>Access for ' + esc(u.name || u.email) + '</h2>' +
+    '<p class="muted">Tick what this admin can see and change. Admins can never delete anything and can’t change other admins.</p>' +
+    '<div class="checks">' + PERMS.map(([k, l]) => '<label><input type="checkbox" name="perm" value="' + k + '"' + (p[k] ? ' checked' : '') + '> ' + l + '</label>').join('') + '</div>' +
+    '<div class="row" style="margin-top:14px"><button class="btn btn-red" type="submit">Save access</button><button type="button" class="btn btn-line" id="perm-close">Close</button></div></form>';
+  $('perm-close').onclick = () => { $('u-detail').innerHTML = ''; };
+  $('perm-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const next = {}; PERMS.forEach(([k]) => { next[k] = !!document.querySelector('input[name=perm][value="' + k + '"]:checked'); });
+    try { await updateDoc(doc(db, 'users', uid), { perms: next }); u.perms = next; toast('Access saved'); renderUsers(); }
+    catch (x) { toast(friendlyError(x)); }
+  };
+  $('u-detail').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Super admin: remove an account, its packages and sessions, and its login
+async function deleteUser(uid) {
+  const u = users.find((x) => x.id === uid); if (!u || !SUPER) return;
+  const pk = packages.filter((p) => p.clientUid === uid), ss = sessions.filter((s) => s.clientUid === uid);
+  const typed = prompt('Delete ' + (u.name || u.email) + '?\n\nThis removes the account, ' + pk.length + ' package(s) and ' + ss.length + ' session(s). It cannot be undone.\n\nType DELETE to confirm.');
+  if (typed !== 'DELETE') return toast('Nothing deleted.');
+  try {
+    const b = writeBatch(db);
+    ss.forEach((s) => b.delete(doc(db, 'sessions', s.id)));
+    pk.forEach((p) => b.delete(doc(db, 'packages', p.id)));
+    b.delete(doc(db, 'users', uid));
+    await b.commit();
+    let login = '';
+    try { const r = await backend('deleteUser', { uid }); login = r && r.ok ? ' and their login' : ' (their login could not be removed: ' + ((r && r.error) || 'unknown') + ')'; }
+    catch (x) { login = ' (their login could not be removed)'; }
+    await loadAll(); renderUsers(); toast('Deleted the account' + login + '.');
+  } catch (x) { toast(friendlyError(x)); }
 }
 
 /* ======================= Packages & sessions ======================= */
@@ -83,7 +146,8 @@ function renderPackages() {
       '<td>' + esc(p.title || p.total + ' sessions') + '<br><span class="small muted">' + r.done + ' done · ' + r.left + ' left</span></td>' +
       '<td><select data-f="paid"><option value="1"' + (p.paid ? ' selected' : '') + '>Paid</option><option value="0"' + (!p.paid ? ' selected' : '') + '>Unpaid</option></select></td>' +
       '<td><select data-f="status"><option value="active"' + (p.status !== 'cancelled' ? ' selected' : '') + '>Active</option><option value="cancelled"' + (p.status === 'cancelled' ? ' selected' : '') + '>Cancelled</option></select></td>' +
-      '<td><button class="btn btn-line btn-sm" data-open="' + esc(p.id) + '">Sessions</button></td></tr>';
+      '<td><span class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn btn-line btn-sm" data-open="' + esc(p.id) + '">Sessions</button>' +
+      (SUPER ? '<button class="link small" data-delpkg="' + esc(p.id) + '">Delete</button>' : '') + '</span></td></tr>';
   }).join('');
   $('panel').innerHTML = form + '<h2>All packages</h2><div class="table-wrap"><table class="t"><thead><tr><th>Client</th><th>Coach</th><th>Package</th><th>Payment</th><th>Status</th><th></th></tr></thead><tbody>' +
     (rows || '<tr><td colspan="6" class="muted">No packages yet.</td></tr>') + '</tbody></table></div><div id="pkg-detail" style="margin-top:24px"></div>';
@@ -125,6 +189,18 @@ function renderPackages() {
     };
   });
   $('panel').querySelectorAll('[data-open]').forEach((b) => { b.onclick = () => openPackage(b.dataset.open); });
+  $('panel').querySelectorAll('[data-delpkg]').forEach((b) => {
+    b.onclick = async () => {
+      const p = packages.find((x) => x.id === b.dataset.delpkg); if (!p || !SUPER) return;
+      const ss = sessions.filter((s) => s.packageId === p.id);
+      if (!confirm('Delete ' + (p.clientName || '') + '’s ' + (p.title || 'package') + ' and its ' + ss.length + ' session(s)? This cannot be undone.')) return;
+      try {
+        const wb = writeBatch(db);
+        ss.forEach((s) => wb.delete(doc(db, 'sessions', s.id))); wb.delete(doc(db, 'packages', p.id));
+        await wb.commit(); await loadAll(); renderPackages(); toast('Package deleted');
+      } catch (x) { toast(friendlyError(x)); }
+    };
+  });
 }
 
 function openPackage(id) {
@@ -138,7 +214,7 @@ function openPackage(id) {
     '<button class="btn btn-red" type="submit">Add</button></form>' +
     '<ul class="list">' + (list.map((s) => '<li><span>' + (s.date ? fmtDate(s.date) : 'No date') + (s.note ? ' · <span class="muted">' + esc(s.note) + '</span>' : '') + '</span>' +
       '<span class="row"><select data-sid="' + esc(s.id) + '"><option value="scheduled"' + (s.status === 'scheduled' ? ' selected' : '') + '>Scheduled</option><option value="done"' + (s.status === 'done' ? ' selected' : '') + '>Done</option><option value="cancelled"' + (s.status === 'cancelled' ? ' selected' : '') + '>Cancelled</option></select>' +
-      '<button class="link small" data-del="' + esc(s.id) + '">Delete</button></span></li>').join('') || '<li class="muted">No sessions yet.</li>') + '</ul></section>';
+      (SUPER ? '<button class="link small" data-del="' + esc(s.id) + '">Delete</button>' : '') + '</span></li>').join('') || '<li class="muted">No sessions yet.</li>') + '</ul></section>';
   $('s-add').onsubmit = async (e) => {
     e.preventDefault();
     try {
@@ -218,7 +294,7 @@ function editCoach(id) {
     '<label class="checks"><label><input type="checkbox" id="ce-v-portrait" checked> Vertical (phone) video</label></label>' +
     '<button type="button" class="btn btn-line" id="ce-v-add">Add video</button> <span id="ce-v-busy" class="muted small"></span></fieldset>' +
     '<div class="row"><button class="btn btn-red" type="submit">Save coach</button><button type="button" class="btn btn-line" id="ce-cancel">Close</button>' +
-    (id ? '<button type="button" class="link" id="ce-del" style="margin-inline-start:auto">Delete coach</button>' : '') + '</div>' +
+    (id && SUPER ? '<button type="button" class="link" id="ce-del" style="margin-inline-start:auto">Delete coach</button>' : '') + '</div>' +
     '<p class="small muted">Saving keeps a draft. Press “Publish to website” to update ownfit.ae.</p></form>';
 
   const media = {}; // new uploads: key -> dataURL
@@ -324,7 +400,8 @@ async function publish() {
 function renderBookings() {
   $('panel').innerHTML = '<div class="card"><h2>Website booking requests</h2><p>Every request sent from the booking form is saved in your Google Sheet, with a Status column you can update.</p>' +
     '<div><a class="btn btn-red" href="' + SHEET_URL + '" target="_blank" rel="noopener">Open bookings sheet</a></div>' +
-    '<p class="small muted">When a client pays: make sure they have an account (they sign up at ownfit.ae/login.html), then assign their package in “Sessions & packages”.</p></div>';
+    '<p class="small muted">When a client pays: make sure they have an account (they sign up at ownfit.ae/login.html), then assign their package in “Sessions & packages”.</p>' +
+    (SUPER ? '<p class="small muted">Other admins can open the sheet only if you share it with their Google account in Google Drive.</p>' : '') + '</div>';
 }
 
 /* ======================= Helpers ======================= */
@@ -358,6 +435,21 @@ onAuthStateChanged(auth, async (user) => {
   try {
     const { profile } = await ensureProfile(user);
     if (roleOf(user, profile) !== 'admin') { location.replace('account.html'); return; }
+    const isSuper = isOwner(user);
+    perms = isSuper ? ALL_PERMS : (profile.perms || {});
+    SUPER = isSuper;
+    const as = new URLSearchParams(location.search).get('as');
+    if (isSuper) {
+      // Clean up: an old profile document for the super admin would make the account visible to other admins
+      try { const own = await getDoc(doc(db, 'users', user.uid)); if (own.exists()) await deleteDoc(own.ref); } catch (x) { /* ignore */ }
+      if (as) {
+        const snap = await getDoc(doc(db, 'users', as));
+        if (!snap.exists()) { app.innerHTML = '<p class="err">That account no longer exists.</p><p><a href="admin.html">Back to admin</a></p>'; return; }
+        const t = { id: snap.id, ...snap.data() };
+        if (t.role !== 'admin') { location.replace('account.html?as=' + encodeURIComponent(as)); return; }
+        viewAs = t; perms = t.status === 'active' ? (t.perms || {}) : {}; SUPER = false; // see exactly what this admin sees
+      }
+    }
     await loadAll(); shell();
   } catch (x) { app.innerHTML = '<p class="err">' + esc(friendlyError(x)) + '</p>'; }
 });
