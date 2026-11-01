@@ -1,7 +1,7 @@
 import {
   auth, $, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, updateProfile, sendEmailVerification, sendPasswordResetEmail,
-  ensureProfile, roleOf, backend, friendlyError
+  ensureProfile, roleOf, backend, friendlyError, BACKEND
 } from './fb.js';
 
 const err = $('err'), ok = $('ok');
@@ -54,8 +54,11 @@ $('form-up').onsubmit = async (e) => {
 $('forgot').onclick = async () => {
   const email = $('in-email').value.trim();
   if (!email) return show(err, 'Type your email above first, then press “Forgot your password?”.');
-  try { await sendPasswordResetEmail(auth, email); show(ok, 'If an account exists for ' + email + ', a reset link is on its way.'); }
-  catch (x) { show(err, friendlyError(x)); }
+  try {
+    // Sent by our backend from noreply@ownfit.ae (never reveals whether the email has an account)
+    await fetch(BACKEND, { method: 'POST', body: new URLSearchParams({ action: 'forgot', email }) });
+    show(ok, 'If an account exists for ' + email + ', a reset link is on its way (check spam too).');
+  } catch (x) { show(err, 'Could not send the reset email. Please try again.'); }
 };
 
 let handled = false;

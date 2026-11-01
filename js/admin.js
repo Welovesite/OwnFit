@@ -61,11 +61,22 @@ function renderUsers() {
         : '<select data-f="status">' + opt('active', 'Active', u.status === 'blocked' ? '' : 'active') + opt('blocked', 'Inactive', u.status) + '</select>') + '</td>' +
       '<td>' + pk + '</td><td class="small muted">' + esc(u.provider === 'google.com' ? 'Google' : 'Email') + '</td>' +
       (SUPER ? '<td><span class="row" style="gap:6px;flex-wrap:nowrap">' +
+        '<button class="btn btn-line btn-sm" data-login="' + esc(u.id) + '">Login</button>' +
         (isAdm ? '<button class="btn btn-line btn-sm" data-perm="' + esc(u.id) + '">Access</button>' : '') +
         '<a class="btn btn-line btn-sm" href="' + (isAdm ? 'admin.html' : 'account.html') + '?as=' + encodeURIComponent(u.id) + '">View as</a>' +
         '<button class="link small" data-deluser="' + esc(u.id) + '">Delete</button></span></td>' : '') + '</tr>';
   }).join('');
-  $('panel').innerHTML = '<p class="muted">Everyone who signs in appears here as a <strong>client</strong>. To give a trainer their dashboard, set Role = Coach and link them to their coach profile. Inactive users can’t see anything.' +
+  const addForm = SUPER ? '<details class="card" id="add-acc" style="margin-bottom:22px"' + (addOpen ? ' open' : '') + '><summary style="cursor:pointer;font-weight:700">+ Add account (email &amp; password)</summary>' +
+    '<form id="acc-form" style="margin-top:16px"><div class="grid2">' +
+    '<div class="field"><label for="a-name">Full name</label><input id="a-name" maxlength="80" required></div>' +
+    '<div class="field"><label for="a-email">Email (their login)</label><input id="a-email" type="email" required autocomplete="off"></div>' +
+    '<div class="field"><label for="a-phone">Mobile (optional)</label><input id="a-phone" maxlength="30" dir="ltr"></div>' +
+    '<div class="field"><label for="a-role">Role</label><select id="a-role"><option value="client">Customer</option><option value="coach">Trainer</option><option value="admin">Admin</option></select></div>' +
+    '<div class="field" id="a-coach-wrap" hidden><label for="a-coach">Trainer profile</label><select id="a-coach">' + coachOpts('') + '</select></div>' +
+    '<div class="field"><label for="a-pass">Password</label><div class="row" style="gap:8px;flex-wrap:nowrap"><input id="a-pass" type="text" minlength="8" maxlength="64" required autocomplete="off" dir="ltr" style="flex:1"><button type="button" class="btn btn-line btn-sm" id="a-gen">Generate</button></div></div>' +
+    '</div><p class="small muted">No email is sent. After creating, you’ll see the login to send them, and a “Send welcome email” button if you want one.</p>' +
+    '<button class="btn btn-red" type="submit" id="a-submit">Create account</button></form><div id="acc-result"></div></details>' : '';
+  $('panel').innerHTML = addForm + '<p class="muted">Everyone who signs in appears here as a <strong>client</strong>. To give a trainer their dashboard, set Role = Coach and link them to their coach profile. Inactive users can’t see anything.' +
     (SUPER ? ' As super admin you can make admins, choose what each admin can access, view any account as that person, and delete accounts.' : '') + '</p>' +
     '<div class="table-wrap"><table class="t"><thead><tr><th>User</th><th>Role</th><th>Coach profile (for coaches)</th><th>Access</th><th>Packages</th><th>Login</th>' + (SUPER ? '<th></th>' : '') + '</tr></thead><tbody>' +
     (rows || '<tr><td colspan="7" class="muted">No users yet.</td></tr>') + '</tbody></table></div><div id="u-detail" style="margin-top:24px"></div>';
@@ -83,6 +94,107 @@ function renderUsers() {
   });
   $('panel').querySelectorAll('[data-perm]').forEach((b) => { b.onclick = () => editPerms(b.dataset.perm); });
   $('panel').querySelectorAll('[data-deluser]').forEach((b) => { b.onclick = () => deleteUser(b.dataset.deluser); });
+  $('panel').querySelectorAll('[data-login]').forEach((b) => { b.onclick = () => loginPanel(b.dataset.login); });
+  if (SUPER) wireAddAccount();
+}
+
+/* ---- Super admin: accounts & passwords (passwords can be SET, never read) ---- */
+let addOpen = false;
+function genPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789', a = new Uint32Array(10);
+  crypto.getRandomValues(a);
+  return [...a].map((n) => chars[n % chars.length]).join('');
+}
+function loginCard(title, email, pw, uid) {
+  const text = 'OwnFit login\nWebsite: https://ownfit.ae/login.html\nEmail: ' + email + '\nPassword: ' + pw;
+  return '<div class="card hot" style="margin-top:16px"><h3>' + esc(title) + '</h3>' +
+    '<p style="font-family:monospace;white-space:pre-line;margin:8px 0">Email: ' + esc(email) + '\nPassword: ' + esc(pw) + '</p>' +
+    '<p class="small muted">Copy this now – the password is not saved anywhere and can’t be shown again (you can always set a new one).</p>' +
+    '<div class="row"><button type="button" class="btn btn-line btn-sm" data-copy="' + esc(text) + '">Copy login</button>' +
+    '<a class="btn btn-line btn-sm" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(text) + '">Send on WhatsApp</a>' +
+    (uid ? '<button type="button" class="btn btn-red btn-sm" data-welcome="' + esc(uid) + '">Send welcome email</button>' : '') + '</div></div>';
+}
+function wireCards(root) {
+  root.querySelectorAll('[data-copy]').forEach((b) => {
+    b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); toast('Copied'); } catch (x) { toast('Copy failed – select the text instead.'); } };
+  });
+  root.querySelectorAll('[data-welcome]').forEach((b) => {
+    b.onclick = async () => {
+      b.disabled = true; b.textContent = 'Sending…';
+      try { const r = await backend('sendWelcome', { uid: b.dataset.welcome }); if (!r.ok) throw new Error(r.error); b.textContent = 'Welcome email sent'; toast('Welcome email sent to ' + r.email); }
+      catch (x) { b.disabled = false; b.textContent = 'Send welcome email'; toast(friendlyError(x)); }
+    };
+  });
+}
+function wireAddAccount() {
+  const role = $('a-role'), wrap = $('a-coach-wrap');
+  $('add-acc').ontoggle = () => { addOpen = $('add-acc').open; };
+  role.onchange = () => { wrap.hidden = role.value !== 'coach'; };
+  $('a-gen').onclick = () => { $('a-pass').value = genPassword(); };
+  $('acc-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const name = $('a-name').value.trim(), email = $('a-email').value.trim().toLowerCase(), pw = $('a-pass').value;
+    const r = role.value, coachId = $('a-coach').value, phone = $('a-phone').value.trim();
+    if (name.length < 2) return toast('Add their name.');
+    if (pw.length < 8) return toast('Password must be at least 8 characters.');
+    if (r === 'coach' && !coachId) return toast('Pick which trainer profile this person is.');
+    $('a-submit').disabled = true; $('a-submit').textContent = 'Creating…';
+    try {
+      const res = await backend('createUser', { name, email, password: pw });
+      if (!res.ok) throw new Error(res.error || 'Could not create the account');
+      const profile = { email: res.email, name, phone, role: r, status: 'active', provider: 'password', createdAt: serverTimestamp(), createdBy: 'super-admin' };
+      if (r === 'coach') profile.coachId = coachId;
+      if (r === 'admin') profile.perms = ALL_PERMS;
+      await setDoc(doc(db, 'users', res.uid), profile);
+      await loadAll(); addOpen = true; renderUsers();
+      $('acc-result').innerHTML = loginCard('Account created for ' + name, res.email, pw, res.uid) +
+        (r === 'admin' ? '<p class="small muted">Admins start with all four areas on – press “Access” on their row to change that.</p>' : '');
+      wireCards($('acc-result'));
+      toast('Account created');
+    } catch (x) { toast(friendlyError(x)); }
+    finally { if ($('a-submit')) { $('a-submit').disabled = false; $('a-submit').textContent = 'Create account'; } }
+  };
+}
+async function loginPanel(uid) {
+  const u = users.find((x) => x.id === uid); if (!u || !SUPER) return;
+  $('u-detail').innerHTML = '<div class="card hot"><p class="muted"><span class="spinner"></span> Loading login details…</p></div>';
+  $('u-detail').scrollIntoView({ behavior: 'smooth' });
+  let info = {};
+  try { info = await backend('accountInfo', { uid }); if (!info.ok) throw new Error(info.error); }
+  catch (x) { $('u-detail').innerHTML = '<div class="card hot"><p class="err">' + esc(friendlyError(x)) + '</p></div>'; return; }
+  const methods = (info.providers || []).map((p) => (p === 'google.com' ? 'Google' : p === 'password' ? 'Email & password' : p)).join(', ') || 'Email & password';
+  $('u-detail').innerHTML = '<div class="card hot"><h2>Login for ' + esc(u.name || info.email) + '</h2>' +
+    '<p><strong>Login email:</strong> <span dir="ltr">' + esc(info.email) + '</span><br><strong>Signs in with:</strong> ' + esc(methods) +
+    (info.lastLogin ? '<br><strong>Last login:</strong> ' + esc(fmtDate(info.lastLogin)) : '') + '</p>' +
+    '<p class="small muted">Passwords are stored scrambled, so nobody (not even you) can read a current password. You can set a new one or send a reset link.</p>' +
+    '<form id="pw-form" class="row" style="align-items:flex-end"><div class="field" style="flex:1;min-width:220px"><label for="pw-new">New password</label>' +
+    '<input id="pw-new" type="text" minlength="8" maxlength="64" required autocomplete="off" dir="ltr"></div>' +
+    '<button type="button" class="btn btn-line btn-sm" id="pw-gen">Generate</button><button class="btn btn-red" type="submit" id="pw-save">Set new password</button></form>' +
+    (methods.indexOf('Google') > -1 && methods.indexOf('Email') < 0 ? '<p class="small muted">This person signs in with Google. Setting a password lets them also sign in with email &amp; password.</p>' : '') +
+    '<div class="row" style="margin-top:14px"><button type="button" class="btn btn-line btn-sm" id="pw-reset">Send password reset email</button>' +
+    '<button type="button" class="btn btn-line btn-sm" data-welcome="' + esc(uid) + '">' + (info.welcomed ? 'Send welcome email again' : 'Send welcome email') + '</button>' +
+    '<button type="button" class="btn btn-line btn-sm" id="pw-close">Close</button></div><div id="pw-result"></div></div>';
+  wireCards($('u-detail'));
+  $('pw-gen').onclick = () => { $('pw-new').value = genPassword(); };
+  $('pw-close').onclick = () => { $('u-detail').innerHTML = ''; };
+  $('pw-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const pw = $('pw-new').value;
+    if (pw.length < 8) return toast('Password must be at least 8 characters.');
+    if (!confirm('Set a new password for ' + (u.name || info.email) + '? Their old password stops working.')) return;
+    $('pw-save').disabled = true;
+    try {
+      const r = await backend('setPassword', { uid, password: pw }); if (!r.ok) throw new Error(r.error);
+      $('pw-result').innerHTML = loginCard('New password set', info.email, pw, null); wireCards($('pw-result')); $('pw-new').value = '';
+      toast('Password changed');
+    } catch (x) { toast(friendlyError(x)); }
+    finally { $('pw-save').disabled = false; }
+  };
+  $('pw-reset').onclick = async () => {
+    const b = $('pw-reset'); b.disabled = true; b.textContent = 'Sending…';
+    try { const r = await backend('sendReset', { uid }); if (!r.ok) throw new Error(r.error); b.textContent = 'Reset email sent'; toast('Reset link sent to ' + r.email); }
+    catch (x) { b.disabled = false; b.textContent = 'Send password reset email'; toast(friendlyError(x)); }
+  };
 }
 
 // Super admin: choose which areas an admin can open
