@@ -3,6 +3,7 @@ import {
   backend, SHEET_URL, OWNER_EMAIL, PERMS, ALL_PERMS, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc,
   serverTimestamp, writeBatch, query, where
 } from './fb.js';
+import { renderInsights } from './insights.js';
 
 const app = $('app');
 const SERVICES = { 'personal-training': 'Personal Training', boxing: 'Boxing', kickboxing: 'Kickboxing', 'muay-thai': 'Muay Thai' };
@@ -30,6 +31,7 @@ const userLabel = (u) => (u.name ? u.name + ' — ' : '') + u.email;
 function shell() {
   const tabs = [['users', 'Users & access', 'users'], ['packages', 'Sessions & packages', 'sessions'], ['coaches', 'Coaches', 'coaches'], ['bookings', 'Bookings', 'bookings']]
     .filter((t) => can(t[2]));
+  if (SUPER) tabs.push(['insights', 'Visitors', 'insights']); // super admin only
   if (!tabs.some((t) => t[0] === current)) current = tabs.length ? tabs[0][0] : null;
   const banner = viewAs ? '<div class="viewas"><span>Viewing as <strong>' + esc(viewAs.name || viewAs.email) + '</strong> (admin) – this is exactly what they see.</span>' +
     '<a href="admin.html">Back to my admin</a></div>' : '';
@@ -41,7 +43,7 @@ function shell() {
       '<div id="panel"></div>'
       : '<div class="card"><h2>No access yet</h2><p>Your admin account has no areas switched on. Ask the super admin to give you access.</p></div>');
   app.querySelectorAll('[data-tab]').forEach((b) => { b.onclick = () => { current = b.dataset.tab; shell(); }; });
-  if (current) ({ users: renderUsers, packages: renderPackages, coaches: renderCoaches, bookings: renderBookings })[current]();
+  if (current) ({ users: renderUsers, packages: renderPackages, coaches: renderCoaches, bookings: renderBookings, insights: () => renderInsights($('panel'), coaches) })[current]();
 }
 
 /* ======================= Users & access ======================= */

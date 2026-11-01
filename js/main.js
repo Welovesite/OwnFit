@@ -300,6 +300,7 @@ window.OWNFIT_START = function () {
     var p = chips.filter(function (c) { return c.getAttribute('aria-pressed') === 'true'; })[0];
     if (p) disc.value = p.dataset.v;
     $('f-emirate').selectedIndex = $('q-emirate').selectedIndex;
+    if (window.ownfitTrack) window.ownfitTrack('form', 'Quick search');
     goBook();
   });
   document.querySelectorAll('[data-plan]').forEach(function (a) {
@@ -353,6 +354,7 @@ window.OWNFIT_START = function () {
         }) });
       } catch (x) { /* never block the WhatsApp step */ }
     }
+    if (window.ownfitTrack) window.ownfitTrack('form', 'Booking request' + (coach ? ': ' + coach.id : ''));
     $('done').hidden = false;
     $('done').scrollIntoView({ block: 'nearest' });
   });
