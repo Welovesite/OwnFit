@@ -64,7 +64,7 @@ window.OWNFIT_START = function () {
   function coachById(id) { return D.coaches.filter(function (c) { return c.id === id; })[0]; }
   function svcs(c) { return (c.services || (c.service ? [c.service] : [])).filter(function (k) { return KEYS.indexOf(k) > -1; }); }
   function byFeatured(a, b) { return (b.featured ? 1 : 0) - (a.featured ? 1 : 0); }
-  function coachesFor(k) { return D.coaches.filter(function (c) { return svcs(c).indexOf(k) > -1; }).sort(byFeatured); }
+  function coachesFor(k) { return D.coaches.filter(function (c) { return k === 'all' || svcs(c).indexOf(k) > -1; }).sort(byFeatured); }
   function svcNames(c) {
     var n = svcs(c).map(svcName);
     return n.length > 1 ? n.slice(0, -1).join(SEP) + t.and + n[n.length - 1] : (n[0] || '');
@@ -72,7 +72,9 @@ window.OWNFIT_START = function () {
   // Female wording where the language needs it (Arabic)
   function F(c, key) { return (/^f/i.test(c.gender || '') && t[key + '_f']) ? t[key + '_f'] : t[key]; }
   function has(v) { return Array.isArray(v) ? v.length > 0 : (v != null && String(v).trim() !== ''); }
-  function profileUrl(c) { return 'coach' + SUF + '.html#' + c.id; }
+  // Coaches with their own page (better for Google); others use coach.html#id
+  var STATIC_COACHES = ['salah-eddine', 'fatima-el-ftam', 'mehdi-fichkou'];
+  function profileUrl(c) { return STATIC_COACHES.indexOf(c.id) > -1 ? 'coach-' + c.id + SUF + '.html' : 'coach' + SUF + '.html#' + c.id; }
   function bookUrl(c) { return HOME + '#book-coach-' + c.id; }
 
   /* ---------- Common ---------- */
@@ -146,7 +148,7 @@ window.OWNFIT_START = function () {
   /* ---------- Coach profile ---------- */
   var profile = $('profile');
   function renderProfile() {
-    var c = coachById(location.hash.replace(/^#/, ''));
+    var c = coachById(document.body.getAttribute('data-coach') || location.hash.replace(/^#/, ''));
     var crumbSvc = $('crumb-svc'), crumbName = $('crumb-name');
     if (!c) {
       document.title = t.nfPageTitle;
@@ -278,6 +280,11 @@ window.OWNFIT_START = function () {
       var c = coachById(m[1]); if (c) { coachSel.value = c.id; matchDisc(c); }
     } else if ((m = h.match(/^#book-svc-(.+)$/))) {
       if (KEYS.indexOf(m[1]) > -1) disc.value = m[1];
+    } else if ((m = h.match(/^#book-plan-(.+)$/))) {
+      if ($('f-plan').querySelector('option[value="' + m[1].replace(/[^\w-]/g, '') + '"]')) $('f-plan').value = m[1];
+    } else if ((m = h.match(/^#book-in-(.+)$/))) {
+      var em = $('f-emirate'), slug = m[1].toLowerCase();
+      [].forEach.call(em.options, function (o, i) { if (['dubai', 'abu-dhabi', 'sharjah', 'ajman', 'ras-al-khaimah', 'umm-al-quwain', 'fujairah'][i] === slug) em.selectedIndex = i; });
     } else return;
     goBook();
   }
