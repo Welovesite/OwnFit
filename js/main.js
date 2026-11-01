@@ -77,11 +77,16 @@ window.OWNFIT_START = function () {
 
   /* ---------- Common ---------- */
   var yr = $('yr'); if (yr) yr.textContent = new Date().getFullYear();
-  var nav = $('main-nav');
-  if (nav && !nav.querySelector('.nav-login')) {
-    var li = document.createElement('a');
-    li.className = 'nav-login'; li.href = 'login.html'; li.textContent = LANG === 'ar' ? 'حسابي' : 'My account';
-    nav.appendChild(li);
+  // Clear "Log in / Sign up" button in the header of every page
+  var actions = document.querySelector('.top .top-actions');
+  if (actions && !actions.querySelector('.btn-login')) {
+    var lg = document.createElement('a');
+    lg.className = 'btn-login'; lg.href = 'login.html';
+    lg.setAttribute('aria-label', LANG === 'ar' ? 'تسجيل الدخول أو إنشاء حساب' : 'Log in or sign up');
+    lg.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>' +
+      '<span class="hide-sm">' + (LANG === 'ar' ? 'دخول' : 'Log in') + '</span>';
+    var bookBtn = actions.querySelector('.btn-red');
+    actions.insertBefore(lg, bookBtn || null);
   }
   document.querySelectorAll('[data-wa-num]').forEach(function (el) {
     el.textContent = '+' + D.whatsapp.replace(/^(\d{3})(\d{2})(\d{3})(\d{4})$/, '$1 $2 $3 $4');
@@ -286,7 +291,7 @@ window.OWNFIT_START = function () {
   var openedAt = Date.now(), trap = document.createElement('input');
   trap.type = 'text'; trap.name = 'website'; trap.tabIndex = -1; trap.autocomplete = 'off';
   trap.setAttribute('aria-hidden', 'true');
-  trap.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;opacity:0';
+  trap.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);opacity:0;pointer-events:none';
   full.appendChild(trap);
   
   function txt(sel) { return sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : ''; }

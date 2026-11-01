@@ -17,6 +17,7 @@ function tab(up) {
 }
 $('tab-in').onclick = () => tab(false);
 $('tab-up').onclick = () => tab(true);
+if (/signup|register/i.test(location.hash + location.search)) tab(true);
 
 $('google').onclick = async () => {
   show(err); busy(true);
