@@ -1,4 +1,4 @@
-(function () {
+window.OWNFIT_START = function () {
   var D = window.OWNFIT || { whatsapp: '', coaches: [] };
   var LANG = document.documentElement.lang === 'ar' ? 'ar' : 'en';
   var RTL = LANG === 'ar';
@@ -77,6 +77,12 @@
 
   /* ---------- Common ---------- */
   var yr = $('yr'); if (yr) yr.textContent = new Date().getFullYear();
+  var nav = $('main-nav');
+  if (nav && !nav.querySelector('.nav-login')) {
+    var li = document.createElement('a');
+    li.className = 'nav-login'; li.href = 'login.html'; li.textContent = LANG === 'ar' ? 'حسابي' : 'My account';
+    nav.appendChild(li);
+  }
   document.querySelectorAll('[data-wa-num]').forEach(function (el) {
     el.textContent = '+' + D.whatsapp.replace(/^(\d{3})(\d{2})(\d{3})(\d{4})$/, '$1 $2 $3 $4');
   });
@@ -161,11 +167,13 @@
     var videos = vids.length
       ? '<div class="videos">' + vids.map(function (v) {
           var title = L(v, 'title');
-          var yt = v.type === 'youtube';
+          var yt = v.type === 'youtube' || v.type === 'drive';
+          var embed = v.type === 'drive' ? 'https://drive.google.com/file/d/' + encodeURIComponent(v.id) + '/preview'
+            : 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(v.id);
           var inner = yt
-            ? '<iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(v.id) + '" title="' + esc(title) + '" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
+            ? '<iframe src="' + embed + '" title="' + esc(title) + '" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
             : '<video src="' + esc(v.src) + '"' + (v.poster ? ' poster="' + esc(v.poster) + '"' : '') + ' controls playsinline preload="metadata"></video>';
-          return '<figure class="v-item' + (yt ? '' : ' v-file') + '"><div class="v-frame">' + inner + '</div><figcaption>' + esc(title) + '</figcaption></figure>';
+          return '<figure class="v-item' + (yt && !v.portrait ? '' : ' v-file') + '"><div class="v-frame">' + inner + '</div><figcaption>' + esc(title) + '</figcaption></figure>';
         }).join('') + '</div>'
       : '<div class="videos"><div class="v-item v-empty"><div class="v-frame"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/></svg><span>' + esc(t.videosSoon) + '</span></div></div></div>';
 
@@ -335,4 +343,53 @@
     };
     try { navigator.clipboard.writeText(text).then(ok, fallback); } catch (x) { fallback(); }
   });
+};
+
+/* ---------- Load coaches published from the admin page, then start ---------- */
+(function () {
+  var started = false;
+  function start() { if (started) return; started = true; window.OWNFIT_START(); }
+  var BASE = 'https://firestore.googleapis.com/v1/projects/ownfit-baea8/databases/(default)/documents';
+  var timer = setTimeout(start, 3500);
+  function okImg(v) { return typeof v === 'string' && /^(data:image\/(jpeg|png|webp);base64,|assets\/)/.test(v); }
+  try {
+    fetch(BASE + '/site/published').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      var raw = d && d.fields && d.fields.json && d.fields.json.stringValue;
+      if (!raw) return start();
+      var list = JSON.parse(raw);
+      if (!Array.isArray(list) || !list.length) return start();
+      var ids = [];
+      list.forEach(function (c) {
+        if (/^media:/.test(c.photo || '')) ids.push(c.photo.slice(6));
+        (c.gallery || []).forEach(function (g) { if (/^media:/.test(g.src || '')) ids.push(g.src.slice(6)); });
+      });
+      function apply(map) {
+        list.forEach(function (c) {
+          if (/^media:/.test(c.photo || '')) c.photo = map[c.photo.slice(6)] || 'assets/coaches/placeholder.svg';
+          if (!okImg(c.photo)) c.photo = 'assets/coaches/placeholder.svg';
+          c.gallery = (c.gallery || []).map(function (g) {
+            if (/^media:/.test(g.src || '')) g.src = map[g.src.slice(6)];
+            return g;
+          }).filter(function (g) { return okImg(g.src); });
+          c.videos = (c.videos || []).filter(function (v) {
+            return (v.type === 'youtube' && /^[\w-]{6,20}$/.test(v.id)) || (v.type === 'drive' && /^[\w-]{10,80}$/.test(v.id)) ||
+              (v.type === 'file' && /^assets\//.test(v.src || ''));
+          });
+        });
+        (window.OWNFIT = window.OWNFIT || {}).coaches = list;
+        clearTimeout(timer); start();
+      }
+      if (!ids.length) return apply({});
+      var names = ids.map(function (id) { return 'projects/ownfit-baea8/databases/(default)/documents/media/' + id; });
+      return fetch(BASE + ':batchGet', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ documents: names }) })
+        .then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
+          var map = {};
+          (rows || []).forEach(function (row) {
+            var f = row.found; if (!f || !f.fields || !f.fields.data) return;
+            map[f.name.split('/').pop()] = f.fields.data.stringValue;
+          });
+          apply(map);
+        });
+    }).catch(start);
+  } catch (e) { start(); }
 })();
