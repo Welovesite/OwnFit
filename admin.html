@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin | OwnFit</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#D7192A">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/portal.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="OwnFit home"><span class="own">OWN</span><span class="fit">FIT</span></a>
+    <div class="top-actions">
+      <a class="btn btn-line btn-sm" href="index.html">Website</a>
+      <button type="button" class="btn btn-red btn-sm" id="logout" hidden>Log out</button>
+    </div>
+  </div>
+</header>
+<main class="wrap portal" id="app">
+  <p class="muted"><span class="spinner"></span> Loading admin…</p>
+</main>
+<script src="js/data.js"></script>
+<script type="module" src="js/admin.js"></script>
+<div class="toast" id="toast" hidden role="status"></div>
+</body>
+</html>
