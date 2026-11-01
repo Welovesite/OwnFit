@@ -208,8 +208,8 @@ function editCoach(id) {
     '<fieldset><legend>Details</legend><p class="small muted">Lists: separate with commas. Paragraphs and bullet points: one per line.</p>' +
     LISTS.map((f) => pair(f, f[0].toUpperCase() + f.slice(1), 'commas')).join('') +
     pair('bio', 'About (one paragraph per line)', 'lines') + pair('highlights', 'Coaching experience (one point per line)', 'lines') +
-    '<div class="field"><label for="ce-ach">Achievements – one per line: Title | Arabic title | Year | Place (1, 2, 3 or 0)</label><textarea id="ce-ach">' +
-      esc((c.achievements || []).map((a) => [a.text, a.text_ar || '', a.year || '', a.place ?? 0].join(' | ')).join('\n')) + '</textarea></div></fieldset>' +
+    '<div class="field"><label for="ce-ach">Achievements – one per line: Title | Arabic title | Year | Place (1, 2, 3 or 0) | Emoji (optional, picked automatically if empty)</label><textarea id="ce-ach">' +
+      esc((c.achievements || []).map((a) => [a.text, a.text_ar || '', a.year || '', a.place ?? 0].concat(a.emoji ? [a.emoji] : []).join(' | ')).join('\n')) + '</textarea></div></fieldset>' +
     '<fieldset><legend>Photo gallery</legend><div class="thumbs" id="ce-gal"></div><div class="field"><label for="ce-gal-add">Add photos</label><input type="file" id="ce-gal-add" accept="image/*" multiple></div></fieldset>' +
     '<fieldset><legend>Videos</legend><ul class="list" id="ce-vids"></ul>' +
     '<div class="grid2"><div class="field"><label for="ce-v-title">Video title</label><input id="ce-v-title"></div><div class="field"><label for="ce-v-title-ar">Video title (Arabic)</label><input id="ce-v-title-ar" dir="rtl"></div></div>' +
@@ -286,7 +286,7 @@ function editCoach(id) {
     TEXTS.forEach(([f]) => { c[f] = v(f); c[f + '_ar'] = v(f + '_ar'); });
     LISTS.forEach((f) => { c[f] = commas(v(f)); c[f + '_ar'] = commas(v(f + '_ar')); });
     PARAS.forEach((f) => { c[f] = lines(v(f)); c[f + '_ar'] = lines(v(f + '_ar')); });
-    c.achievements = lines(v('ach')).map((l) => { const [text, text_ar, year, place] = l.split('|').map((x) => (x || '').trim()); return { text, text_ar, year: year ? Number(year) || year : '', place: Number(place) || 0 }; }).filter((a) => a.text);
+    c.achievements = lines(v('ach')).map((l) => { const [text, text_ar, year, place, emoji] = l.split('|').map((x) => (x || '').trim()); const o = { text, text_ar, year: year ? Number(year) || year : '', place: Number(place) || 0 }; if (emoji) o.emoji = emoji.slice(0, 8); return o; }).filter((a) => a.text);
     c.services = [...document.querySelectorAll('input[name=svc]:checked')].map((x) => x.value);
     c.featured = $('ce-featured').checked; c.published = $('ce-published').checked;
     if (!c.services.length) return toast('Pick at least one service.');

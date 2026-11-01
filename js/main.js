@@ -187,10 +187,22 @@ window.OWNFIT_START = function () {
     if (has(L(c, 'gender'))) facts.push([t.coach, L(c, 'gender')]);
     if (has(L(c, 'languages'))) facts.push([t.languages, join(L(c, 'languages'))]);
     if (has(L(c, 'areas'))) facts.push([t.covers, join(L(c, 'areas'))]);
+    // Emoji that fits each achievement (admin can override with a.emoji)
+    function achEmoji(a) {
+      if (a.emoji) return String(a.emoji).slice(0, 8);
+      var x = String(a.text || '').toLowerCase(), p = a.place || 0;
+      if (/professional|pro fight|fights/.test(x)) return '\uD83E\uDD4A';            // boxing glove
+      if (p === 2 || /runner-up|2nd place/.test(x)) return '\uD83E\uDD48';           // silver
+      if (p === 3 || /3rd place/.test(x)) return '\uD83E\uDD49';                     // bronze
+      if (p === 1 && /africa|world/.test(x)) return '\uD83C\uDF0D';                  // globe
+      if (p === 1 && /champion\b/.test(x)) return '\uD83C\uDFC6';                    // trophy
+      if (p === 1) return '\uD83E\uDD47';                                             // gold
+      return '\u2B50';                                                                 // star
+    }
     var achs = c.achievements || [];
     var achHtml = achs.length ? '<section class="p-section"><h2>' + esc(t.achievements) + '</h2><ol class="ach">' + achs.map(function (a) {
       var p = a.place || 0;
-      return '<li class="ach-' + p + '"><span class="medal" aria-hidden="true">' + (p ? p : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3 7h7l-5.5 4.5L18.5 21 12 16.5 5.5 21l2-7.5L2 9h7z"/></svg>') + '</span>' +
+      return '<li class="ach-' + p + '"><span class="medal" aria-hidden="true">' + esc(achEmoji(a)) + '</span>' +
         '<span class="ach-text">' + esc(L(a, 'text')) + (p ? '<span class="sr"> (' + esc(t.place[p]) + ')</span>' : '') + '</span>' +
         (a.year ? '<span class="ach-year">' + esc(a.year) + '</span>' : '') + '</li>';
     }).join('') + '</ol></section>' : '';

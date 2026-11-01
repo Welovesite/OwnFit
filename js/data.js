@@ -18,7 +18,7 @@
   certifications, languages, areas, specialties     lists (+ _ar)
   bio           list of paragraphs (+ bio_ar)
   highlights    "Coaching experience" bullet points (+ highlights_ar)
-  achievements  list of { text, text_ar, year, place }   place: 1, 2, 3 or 0 (no medal)
+  achievements  list of { text, text_ar, year, place, emoji? }   place: 1, 2, 3 or 0; emoji is chosen automatically unless set
   gallery       extra photos: { src: 'assets/coaches/sara-1.jpg', alt: '...', alt_ar: '...' }
   videos        { type: 'file', src: 'assets/videos/x.mp4', poster: 'assets/videos/x.jpg', title: '...', title_ar: '...' }
                 { type: 'youtube', id: 'YOUTUBE_VIDEO_ID', title: '...', title_ar: '...' }
