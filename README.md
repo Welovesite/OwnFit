@@ -29,6 +29,10 @@ Every request sent from the booking form is also saved as a new row in the **Own
 
 Setup is in `google-apps-script/booking-sheet.gs`: paste it into the sheet's Apps Script editor, deploy it as a web app, and put the web app URL in `js/data.js` as `bookingSheet`. Until that URL is filled in, the form still opens WhatsApp as normal; it just doesn't save a copy.
 
+## Accounts
+
+Every page has a Log in button in the header (login.html). Clients and coaches sign in with Google or email and password; new people use Create account (login.html#signup). The admin panel is admin.html.
+
 ## Languages
 
 Every page has an English and an Arabic version. The **العربية / English** button at the top switches to the same page in the other language (it keeps the coach you are looking at). Arabic visitors who fill in the booking form send their WhatsApp request in Arabic.
