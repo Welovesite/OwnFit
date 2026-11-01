@@ -246,7 +246,7 @@ export async function renderInsights(panel, coaches) {
         periods.slice().reverse().map((p) => '<tr><td>' + esc(p.label) + '</td><td style="text-align:end"><strong>' + p.visitors + '</strong></td><td style="text-align:end">' + p.visits +
           '</td><td style="text-align:end">' + p.views + '</td><td style="text-align:end">' + p.bookings + '</td><td style="text-align:end">' + p.whatsapp + '</td></tr>').join('') +
         '</tbody></table></div></div>';
-      const label = from === to ? nice(from < START ? START : from) : nice(from < START ? START : from) + ' – ' + nice(to);
+      const f0 = from < START ? START : from, label = f0 >= to ? nice(to) : nice(f0) + ' – ' + nice(to);
       body.innerHTML = '<p class="muted">' + esc(label) + '</p>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:22px">' +
           tile(tot.visitors, 'Visitors (people)') + tile(tot.visits, 'Visits') + tile(tot.views, 'Page views') + tile(tot.bookings, 'Booking requests') + tile(tot.whatsapp, 'WhatsApp clicks') + '</div>' +
