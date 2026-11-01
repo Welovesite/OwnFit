@@ -341,3 +341,7 @@ footer p{opacity:.75;font-size:15px}
 .ach{border-top:0}
 #top-coaches{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
 #top-coaches:has(> :only-child), #top-coaches:has(> :nth-child(2):last-child){grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.btn-login{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;min-width:44px;padding:8px 12px;border:2px solid var(--red);color:var(--red);text-decoration:none;font-family:var(--font-label);font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+.btn-login:hover{background:var(--red);color:var(--on-red)}
+[dir="rtl"] .btn-login{font-family:'Cairo','Tajawal',sans-serif;letter-spacing:0;text-transform:none}
+@media (max-width:560px){.btn-login{padding:8px 10px}}
