@@ -271,7 +271,7 @@ window.OWNFIT_START = function () {
       : { req: 'Please add your name, mobile, email and certifications.', email: 'Please enter a valid email address.', disc: 'Pick at least one discipline you coach.', consent: 'Please tick the box so we can contact you.', fail: 'We couldn’t send your application. Please try again or message us on WhatsApp.' };
     var aOpenedAt = 0, aTrap = document.createElement('input');
     aTrap.type = 'text'; aTrap.tabIndex = -1; aTrap.autocomplete = 'off'; aTrap.setAttribute('aria-hidden', 'true');
-    aTrap.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;opacity:0';
+    aTrap.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);opacity:0;pointer-events:none';
     aForm.appendChild(aTrap);
     var showApply = function (focus) {
       if (!$('apply-done').hidden) return;
