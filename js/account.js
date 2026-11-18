@@ -1,12 +1,15 @@
 import {
   auth, db, $, esc, onAuthStateChanged, signOut, ensureProfile, roleOf, isOwner, fmtDate, remaining, friendlyError, localNow,
-  collection, query, where, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
+  collection, query, where, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
+  updateProfile, updatePassword, reauthenticateWithCredential, EmailAuthProvider, BACKEND
 } from './fb.js';
 
 const app = $('app');
 let me = null, profile = null;
 // who = the account shown on this page. Normally yourself; the super admin can "View as" anyone.
 let who = null, viewing = false;
+// Which part of the page is open: the dashboard or the profile
+let view = location.hash === '#profile' ? 'profile' : 'main', mainLabel = 'My training', renderMain = null;
 
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => { t.hidden = true; }, 3200); }
 $('logout').onclick = async () => { await signOut(auth); location.replace('login.html'); };
@@ -28,6 +31,118 @@ function header(roleLabel) {
       ? '<p class="note">Please confirm your email address. We sent you a link when you signed up (check spam).</p>' : '');
 }
 
+function tabsHtml() {
+  return '<div class="tabs" role="tablist" style="margin-bottom:24px">' +
+    [['main', mainLabel], ['profile', 'My profile']].map(([k, l]) =>
+      '<button type="button" role="tab" data-view="' + k + '" aria-selected="' + (view === k) + '">' + l + '</button>').join('') + '</div>';
+}
+function wireTabs() {
+  app.querySelectorAll('[data-view]').forEach((b) => {
+    b.onclick = () => {
+      view = b.dataset.view;
+      if (history.replaceState) history.replaceState(null, '', location.pathname + location.search + (view === 'profile' ? '#profile' : ''));
+      route();
+    };
+  });
+}
+async function route() {
+  if (view === 'profile') return renderProfile();
+  return renderMain();
+}
+
+/* ---------------- My profile (everyone) ---------------- */
+async function renderProfile() {
+  const self = !viewing;
+  const ownerSelf = self && isOwner(me); // the super admin has no users/ record (so other admins never see it)
+  const providers = self ? me.providerData.map((x) => x.providerId) : [profile.provider === 'google.com' ? 'google.com' : 'password'];
+  const hasPw = providers.includes('password'), hasGoogle = providers.includes('google.com');
+  const since = profile.createdAt && profile.createdAt.toDate ? profile.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  const roleName = { client: 'Customer', coach: 'Trainer', admin: 'Admin' }[profile.role] || 'Customer';
+  let coachCard = '';
+  if (profile.role === 'coach' && profile.coachId) {
+    let c = null;
+    try {
+      const pub = await getDoc(doc(db, 'site', 'published'));
+      if (pub.exists()) c = (JSON.parse(pub.data().json || '[]') || []).find((x) => x.id === profile.coachId) || null;
+    } catch (x) { /* show the card without details */ }
+    const SV = { 'personal-training': 'Personal Training', boxing: 'Boxing', kickboxing: 'Kickboxing', 'muay-thai': 'Muay Thai' };
+    const url = 'coach.html#' + encodeURIComponent(profile.coachId);
+    coachCard = '<section class="card" style="margin-top:22px"><h2 style="margin:0">My public trainer profile</h2>' +
+      (c ? '<div class="row" style="gap:18px;align-items:flex-start;flex-wrap:wrap">' +
+          (c.photo ? '<img src="' + esc(c.photo) + '" alt="" style="width:110px;height:130px;object-fit:cover;border:2px solid var(--line)">' : '') +
+          '<div style="flex:1;min-width:220px"><h3 style="margin:0">' + esc(c.name || '') + '</h3>' +
+          '<p class="muted" style="margin:4px 0">' + esc(c.headline || '') + '</p>' +
+          '<p class="small" style="margin:4px 0">' + esc((c.services || []).map((k) => SV[k] || k).join(' · ')) + '</p>' +
+          (c.languages && c.languages.length ? '<p class="small muted" style="margin:4px 0">Languages: ' + esc(c.languages.join(', ')) + '</p>' : '') + '</div></div>'
+        : '<p class="muted">Your public page isn’t live yet.</p>') +
+      '<p class="small muted">This is what clients see on the website. To change your photo, bio, certifications or achievements, send the update to OwnFit and the team will publish it.</p>' +
+      '<div class="row" style="gap:10px;flex-wrap:wrap">' + (c ? '<a class="btn btn-line btn-sm" href="' + url + '" target="_blank" rel="noopener">View my public page</a>' : '') +
+      '<a class="btn btn-line btn-sm" href="https://wa.me/971525700118?text=' + encodeURIComponent('Hi OwnFit, I would like to update my trainer profile (' + (c ? c.name : profile.name || '') + '):') + '" target="_blank" rel="noopener">Request a change on WhatsApp</a></div></section>';
+  }
+  app.innerHTML = header(mainLabel === 'My sessions' ? 'Coach dashboard' : 'My training') + tabsHtml() +
+    '<section class="card"><h2 style="margin:0">Personal details</h2>' +
+    '<form id="pf" class="grid2" novalidate>' +
+      '<div class="field"><label for="pf-name">Full name</label><input id="pf-name" maxlength="80" autocomplete="name" required value="' + esc(profile.name || '') + '"></div>' +
+      (ownerSelf ? '' : '<div class="field"><label for="pf-phone">Mobile number</label><input id="pf-phone" type="tel" dir="ltr" maxlength="30" autocomplete="tel" placeholder="+971 5X XXX XXXX" value="' + esc(profile.phone || '') + '"></div>') +
+      '<div class="field"><label for="pf-email">Email (login)</label><input id="pf-email" type="email" dir="ltr" value="' + esc(who.email || profile.email || '') + '" readonly></div>' +
+      '<div class="field"><label>Account</label><input value="' + esc(roleName + (since ? ' · member since ' + since : '')) + '" readonly></div>' +
+      '<p class="small muted" style="grid-column:1/-1;margin:0">Need to change your login email? Message OwnFit and we’ll update it for you.</p>' +
+      '<div style="grid-column:1/-1"><button class="btn btn-red" type="submit" id="pf-save">Save changes</button></div>' +
+    '</form></section>' +
+    '<section class="card" style="margin-top:22px"><h2 style="margin:0">Login &amp; password</h2>' +
+      '<p class="small muted" style="margin:0">You sign in with: ' + esc([hasPw ? 'Email & password' : '', hasGoogle ? 'Google' : ''].filter(Boolean).join(' and ') || 'Email & password') + '</p>' +
+      (viewing ? '<p class="note">You’re viewing someone else’s account. To set a new password for them, use <strong>Login</strong> on their row in Admin → Users &amp; access.</p>'
+      : hasPw ? '<form id="pw" class="grid2" novalidate autocomplete="off">' +
+          '<div class="field"><label for="pw-cur">Current password</label><input id="pw-cur" type="password" autocomplete="current-password" required></div>' +
+          '<div class="field"><label for="pw-new">New password</label><input id="pw-new" type="password" minlength="8" maxlength="64" autocomplete="new-password" required></div>' +
+          '<div class="field"><label for="pw-new2">Repeat new password</label><input id="pw-new2" type="password" minlength="8" maxlength="64" autocomplete="new-password" required></div>' +
+          '<div class="field" style="justify-content:flex-end"><button class="btn btn-red" type="submit" id="pw-save">Change password</button></div>' +
+          '<p class="small muted" style="grid-column:1/-1;margin:0">Forgot your current password? <button type="button" class="link" id="pw-reset">Email me a reset link</button></p>' +
+        '</form>'
+      : '<p class="muted">You sign in with Google, so there’s no separate OwnFit password to change. Manage your password in your Google account.</p>') +
+    '</section>' + coachCard;
+  wireTabs();
+
+  $('pf').onsubmit = async (e) => {
+    e.preventDefault();
+    const name = $('pf-name').value.trim().slice(0, 80), phone = ownerSelf ? '' : $('pf-phone').value.trim().slice(0, 30);
+    if (name.length < 2) { toast('Please enter your full name.'); $('pf-name').focus(); return; }
+    if (phone && phone.replace(/\D/g, '').length < 7) { toast('Please enter a valid mobile number.'); $('pf-phone').focus(); return; }
+    const btn = $('pf-save'); btn.disabled = true;
+    try {
+      if (!ownerSelf) await updateDoc(doc(db, 'users', who.uid), { name, phone });
+      if (self && me.displayName !== name) { try { await updateProfile(me, { displayName: name }); } catch (x) { /* profile doc is what matters */ } }
+      profile.name = name; profile.phone = phone;
+      toast('Your details are saved'); renderProfile();
+    } catch (x) { toast(friendlyError(x)); btn.disabled = false; }
+  };
+  if ($('pw')) {
+    $('pw').onsubmit = async (e) => {
+      e.preventDefault();
+      const cur = $('pw-cur').value, nw = $('pw-new').value, nw2 = $('pw-new2').value;
+      if (!cur) { toast('Enter your current password.'); $('pw-cur').focus(); return; }
+      if (nw.length < 8) { toast('New password must be at least 8 characters.'); $('pw-new').focus(); return; }
+      if (nw !== nw2) { toast('The new passwords don’t match.'); $('pw-new2').focus(); return; }
+      if (nw === cur) { toast('Choose a password different from your current one.'); return; }
+      const btn = $('pw-save'); btn.disabled = true;
+      try {
+        await reauthenticateWithCredential(me, EmailAuthProvider.credential(me.email, cur));
+        await updatePassword(me, nw);
+        $('pw').reset(); toast('Password changed');
+      } catch (x) {
+        const c = x && x.code || '';
+        toast(/wrong-password|invalid-credential|invalid-login/.test(c) ? 'Your current password is not correct.' :
+          /too-many-requests/.test(c) ? 'Too many tries. Please wait a few minutes and try again.' : friendlyError(x));
+      } finally { btn.disabled = false; }
+    };
+    $('pw-reset').onclick = async () => {
+      const b = $('pw-reset'); b.disabled = true;
+      try { await fetch(BACKEND, { method: 'POST', body: new URLSearchParams({ action: 'forgot', email: me.email }) }); toast('Reset link sent to ' + me.email + ' (check spam too)'); }
+      catch (x) { toast('Could not send the email. Please try again.'); b.disabled = false; }
+    };
+  }
+}
+
 function sessionRow(s, canEdit) {
   const actions = canEdit && s.status === 'scheduled'
     ? '<span class="row"><button class="btn btn-red btn-sm" data-done="' + s.id + '">Mark done</button>' +
@@ -44,7 +159,7 @@ async function renderClient() {
   sessions.sort(byDate);
   const now = localNow();
   const active = pkgs.filter((p) => p.status !== 'cancelled');
-  let html = header('My training');
+  let html = header('My training') + tabsHtml();
   if (!active.length) {
     html += '<div class="card"><h2>No sessions yet</h2><p>Once your package is confirmed, your sessions will appear here.</p>' +
       '<div class="row"><a class="btn btn-red" href="index.html#book">Book a session</a>' +
@@ -66,6 +181,7 @@ async function renderClient() {
       '</section>';
   });
   app.innerHTML = html;
+  wireTabs();
 }
 
 /* ---------------- Coach ---------------- */
@@ -75,7 +191,7 @@ async function renderCoach() {
   const active = pkgs.filter((p) => p.status !== 'cancelled');
   const now = localNow();
   const upcoming = sessions.filter((s) => s.status === 'scheduled' && (s.date || '') >= now);
-  let html = header('Coach dashboard');
+  let html = header('Coach dashboard') + tabsHtml();
   html += '<section style="margin-bottom:28px"><h2>Upcoming sessions</h2>' +
     (upcoming.length ? '<ul class="list">' + upcoming.map((s) => sessionRow(s, true)).join('') + '</ul>' : '<p class="muted">Nothing scheduled yet.</p>') + '</section>';
   html += '<h2>My clients</h2>';
@@ -94,6 +210,7 @@ async function renderCoach() {
   });
   html += '</div>';
   app.innerHTML = html;
+  wireTabs();
 
   app.querySelectorAll('form[data-sched]').forEach((f) => {
     f.onsubmit = async (e) => {
@@ -107,12 +224,12 @@ async function renderCoach() {
           date: dateEl.value, note: noteEl.value.trim().slice(0, 120), status: 'scheduled',
           createdAt: serverTimestamp(), updatedBy: me.uid
         });
-        toast('Session scheduled'); renderCoach();
+        toast('Session scheduled'); route();
       } catch (x) { toast(friendlyError(x)); }
     };
   });
   const setStatus = async (id, status) => {
-    try { await updateDoc(doc(db, 'sessions', id), { status, updatedAt: serverTimestamp(), updatedBy: me.uid }); toast('Updated'); renderCoach(); }
+    try { await updateDoc(doc(db, 'sessions', id), { status, updatedAt: serverTimestamp(), updatedBy: me.uid }); toast('Updated'); route(); }
     catch (x) { toast(friendlyError(x)); }
   };
   app.querySelectorAll('[data-done]').forEach((b) => { b.onclick = () => setStatus(b.dataset.done, 'done'); });
@@ -120,7 +237,7 @@ async function renderCoach() {
   app.querySelectorAll('[data-cancel]').forEach((b) => {
     b.onclick = async () => {
       if (!confirm('Cancel this session? It will be removed.')) return;
-      try { await deleteDoc(doc(db, 'sessions', b.dataset.cancel)); toast('Session removed'); renderCoach(); }
+      try { await deleteDoc(doc(db, 'sessions', b.dataset.cancel)); toast('Session removed'); route(); }
       catch (x) { toast(friendlyError(x)); }
     };
   });
@@ -147,8 +264,9 @@ onAuthStateChanged(auth, async (user) => {
         '<h1>Account paused</h1><p>Your account is not active. Contact OwnFit on <a href="https://wa.me/971525700118">WhatsApp</a>.</p>';
       return;
     }
-    if (role === 'coach' && profile.coachId) await renderCoach();
-    else await renderClient();
+    if (role === 'coach' && profile.coachId) { mainLabel = 'My sessions'; renderMain = renderCoach; }
+    else { mainLabel = 'My training'; renderMain = renderClient; }
+    await route();
   } catch (x) {
     app.innerHTML = '<p class="err">' + esc(friendlyError(x)) + '</p>';
   }
