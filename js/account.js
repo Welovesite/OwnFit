@@ -57,9 +57,9 @@ async function renderProfile() {
   const providers = self ? me.providerData.map((x) => x.providerId) : [profile.provider === 'google.com' ? 'google.com' : 'password'];
   const hasPw = providers.includes('password'), hasGoogle = providers.includes('google.com');
   const since = profile.createdAt && profile.createdAt.toDate ? profile.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
-  const roleName = { client: 'Customer', coach: 'Trainer', admin: 'Admin' }[profile.role] || 'Customer';
+  const roleName = profile.role === 'admin' && profile.coachId ? 'Admin + Trainer' : ({ client: 'Customer', coach: 'Trainer', admin: 'Admin' }[profile.role] || 'Customer');
   let coachCard = '';
-  if (profile.role === 'coach' && profile.coachId) {
+  if ((profile.role === 'coach' || profile.role === 'admin') && profile.coachId) {
     let c = null;
     try {
       const pub = await getDoc(doc(db, 'site', 'published'));
@@ -254,7 +254,7 @@ onAuthStateChanged(auth, async (user) => {
       const snap = await getDoc(doc(db, 'users', as));
       if (!snap.exists()) { app.innerHTML = '<p class="err">That account no longer exists.</p><p><a href="admin.html">Back to admin</a></p>'; return; }
       profile = { id: snap.id, ...snap.data() };
-      if (profile.role === 'admin') { location.replace('admin.html?as=' + encodeURIComponent(as)); return; }
+      if (profile.role === 'admin' && !profile.coachId) { location.replace('admin.html?as=' + encodeURIComponent(as)); return; }
       who = { uid: snap.id, email: profile.email, name: profile.name };
       viewing = true;
     }
@@ -264,7 +264,8 @@ onAuthStateChanged(auth, async (user) => {
         '<h1>Account paused</h1><p>Your account is not active. Contact OwnFit on <a href="https://wa.me/971525700118">WhatsApp</a>.</p>';
       return;
     }
-    if (role === 'coach' && profile.coachId) { mainLabel = 'My sessions'; renderMain = renderCoach; }
+    // Trainers, and admins the super admin has also made a trainer, get the trainer dashboard
+    if ((role === 'coach' || role === 'admin') && profile.coachId) { mainLabel = 'My sessions'; renderMain = renderCoach; }
     else { mainLabel = 'My training'; renderMain = renderClient; }
     await route();
   } catch (x) {

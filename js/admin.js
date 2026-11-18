@@ -56,9 +56,11 @@ function renderUsers() {
     const permText = isAdm ? '<br><span class="small muted">' + (PERMS.filter(([k]) => (u.perms || {})[k]).map(([, l]) => l).join(', ') || 'No access') + '</span>' : '';
     return '<tr data-uid="' + esc(u.id) + '"><td><strong>' + esc(u.name || '—') + '</strong><br><span class="small muted">' + esc(u.email) + '</span>' +
       (u.phone ? '<br><span class="small muted">' + esc(u.phone) + '</span>' : '') + '</td>' +
-      '<td>' + (locked ? '<span class="pill admin">admin</span>' :
-        '<select data-f="role">' + opt('client', 'Client', u.role) + opt('coach', 'Coach', u.role) + (SUPER ? opt('admin', 'Admin', u.role) : '') + '</select>') + permText + '</td>' +
-      '<td>' + (isAdm ? '' : '<select data-f="coachId">' + coachOpts(u.coachId) + '</select>') + '</td>' +
+      '<td>' + (locked ? '<span class="pill admin">admin' + (u.coachId ? ' + trainer' : '') + '</span>' :
+        '<select data-f="role">' + opt('client', 'Client', u.role) + opt('coach', 'Coach', u.role) + (SUPER ? opt('admin', 'Admin', u.role) : '') + '</select>' + (isAdm && u.coachId ? '<br><span class="pill coach">+ trainer</span>' : '')) + permText + '</td>' +
+      '<td>' + (isAdm
+        ? (SUPER ? '<select data-f="coachId" title="Only if this admin also coaches clients">' + coachOpts(u.coachId) + '</select>' : (u.coachId ? esc(coachName(u.coachId)) : ''))
+        : '<select data-f="coachId">' + coachOpts(u.coachId) + '</select>') + '</td>' +
       '<td>' + (locked ? '<span class="pill ' + (u.status === 'blocked' ? 'blocked' : 'client') + '">' + (u.status === 'blocked' ? 'inactive' : 'active') + '</span>'
         : '<select data-f="status">' + opt('active', 'Active', u.status === 'blocked' ? '' : 'active') + opt('blocked', 'Inactive', u.status) + '</select>') + '</td>' +
       '<td>' + pk + '</td><td class="small muted">' + esc(u.provider === 'google.com' ? 'Google' : 'Email') + '</td>' +
@@ -66,6 +68,7 @@ function renderUsers() {
         '<button class="btn btn-line btn-sm" data-login="' + esc(u.id) + '">Login</button>' +
         (isAdm ? '<button class="btn btn-line btn-sm" data-perm="' + esc(u.id) + '">Access</button>' : '') +
         '<a class="btn btn-line btn-sm" href="' + (isAdm ? 'admin.html' : 'account.html') + '?as=' + encodeURIComponent(u.id) + '">View as</a>' +
+        (isAdm && u.coachId ? '<a class="btn btn-line btn-sm" href="account.html?as=' + encodeURIComponent(u.id) + '">Trainer view</a>' : '') +
         '<button class="link small" data-deluser="' + esc(u.id) + '">Delete</button></span></td>' : '') + '</tr>';
   }).join('');
   const addForm = SUPER ? '<details class="card" id="add-acc" style="margin-bottom:22px"' + (addOpen ? ' open' : '') + '><summary style="cursor:pointer;font-weight:700">+ Add account (email &amp; password)</summary>' +
@@ -79,8 +82,8 @@ function renderUsers() {
     '</div><p class="small muted">No email is sent. After creating, you’ll see the login to send them, and a “Send welcome email” button if you want one.</p>' +
     '<button class="btn btn-red" type="submit" id="a-submit">Create account</button></form><div id="acc-result"></div></details>' : '';
   $('panel').innerHTML = addForm + '<p class="muted">Everyone who signs in appears here as a <strong>client</strong>. To give a trainer their dashboard, set Role = Coach and link them to their coach profile. Inactive users can’t see anything.' +
-    (SUPER ? ' As super admin you can make admins, choose what each admin can access, view any account as that person, and delete accounts.' : '') + '</p>' +
-    '<div class="table-wrap"><table class="t"><thead><tr><th>User</th><th>Role</th><th>Coach profile (for coaches)</th><th>Access</th><th>Packages</th><th>Login</th>' + (SUPER ? '<th></th>' : '') + '</tr></thead><tbody>' +
+    (SUPER ? ' As super admin you can make admins, choose what each admin can access, view any account as that person, and delete accounts. To make an admin <strong>also a trainer</strong>, pick their trainer profile on their row – admins have no trainer access unless you do.' : '') + '</p>' +
+    '<div class="table-wrap"><table class="t"><thead><tr><th>User</th><th>Role</th><th>Trainer profile</th><th>Access</th><th>Packages</th><th>Login</th>' + (SUPER ? '<th></th>' : '') + '</tr></thead><tbody>' +
     (rows || '<tr><td colspan="7" class="muted">No users yet.</td></tr>') + '</tbody></table></div><div id="u-detail" style="margin-top:24px"></div>';
   $('panel').querySelectorAll('select[data-f]').forEach((s) => {
     s.onchange = async () => {
@@ -88,6 +91,7 @@ function renderUsers() {
       const patch = { [f]: s.value || null };
       if (f === 'role' && s.value === 'admin' && !u.perms) patch.perms = ALL_PERMS;
       if (f === 'role' && s.value === 'coach' && !u.coachId) toast('Now pick which coach profile this person is.');
+      if (f === 'role' && s.value === 'admin' && u.coachId) patch.coachId = null; // dual access only when you pick it again
       try {
         await updateDoc(doc(db, 'users', uid), patch); Object.assign(u, patch); toast('Saved');
         if (f === 'role') { renderUsers(); if (s.value === 'admin') editPerms(uid); }
@@ -131,7 +135,13 @@ function wireCards(root) {
 function wireAddAccount() {
   const role = $('a-role'), wrap = $('a-coach-wrap');
   $('add-acc').ontoggle = () => { addOpen = $('add-acc').open; };
-  role.onchange = () => { wrap.hidden = role.value !== 'coach'; };
+  const coachLabel = wrap.querySelector('label'), coachSel = $('a-coach');
+  role.onchange = () => {
+    wrap.hidden = role.value === 'client';
+    coachLabel.textContent = role.value === 'admin' ? 'Also a trainer? (optional)' : 'Trainer profile';
+    coachSel.options[0].textContent = role.value === 'admin' ? 'No – admin only' : '—';
+    if (role.value === 'admin') coachSel.value = '';
+  };
   $('a-gen').onclick = () => { $('a-pass').value = genPassword(); };
   $('acc-form').onsubmit = async (e) => {
     e.preventDefault();
@@ -145,12 +155,12 @@ function wireAddAccount() {
       const res = await backend('createUser', { name, email, password: pw });
       if (!res.ok) throw new Error(res.error || 'Could not create the account');
       const profile = { email: res.email, name, phone, role: r, status: 'active', provider: 'password', createdAt: serverTimestamp(), createdBy: 'super-admin' };
-      if (r === 'coach') profile.coachId = coachId;
+      if ((r === 'coach' || r === 'admin') && coachId) profile.coachId = coachId;
       if (r === 'admin') profile.perms = ALL_PERMS;
       await setDoc(doc(db, 'users', res.uid), profile);
       await loadAll(); addOpen = true; renderUsers();
       $('acc-result').innerHTML = loginCard('Account created for ' + name, res.email, pw, res.uid) +
-        (r === 'admin' ? '<p class="small muted">Admins start with all four areas on – press “Access” on their row to change that.</p>' : '');
+        (r === 'admin' ? '<p class="small muted">Admins start with every area on – press “Access” on their row to change that.' + (coachId ? ' They also have the trainer dashboard for ' + esc(coachName(coachId)) + '.' : '') + '</p>' : '');
       wireCards($('acc-result'));
       toast('Account created');
     } catch (x) { toast(friendlyError(x)); }
