@@ -347,3 +347,16 @@ footer p{opacity:.75;font-size:15px}
 .offer h3 a:hover{color:var(--red)}
 .offer h3 a::after{content:" \2192";color:var(--red)}
 [dir=rtl] .offer h3 a::after{content:" \2190"}
+
+/* Coach application */
+.coach .apply-form{flex:1 1 100%;margin-top:8px;border-top:2px solid var(--line);padding-top:28px}
+.coach .apply-form h3{font-size:clamp(26px,3vw,34px)}
+.checks-field{border:0;padding:0;margin:0}
+.checks-field legend{font-family:var(--font-label);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:15px;margin-bottom:8px;padding:0}
+.checks{display:flex;flex-wrap:wrap;gap:10px 22px}
+.checks label,.consent{display:flex;gap:8px;align-items:center;font-size:16px;font-weight:600;cursor:pointer}
+.checks input,.consent input{width:20px;height:20px;accent-color:var(--red);flex:none}
+.consent{font-weight:500;color:var(--muted)}
+.coach .apply-done{flex:1 1 100%}
+.apply-form,.apply-done{scroll-margin-top:150px}
+[dir="rtl"] .checks-field legend{letter-spacing:0}
