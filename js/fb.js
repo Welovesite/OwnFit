@@ -41,6 +41,13 @@ export function isOwner(user) { return !!user && user.email === OWNER_EMAIL && u
 export const PERMS = [['users', 'Users & access'], ['sessions', 'Sessions & packages'], ['coaches', 'Coaches & website'], ['bookings', 'Bookings sheet'], ['applications', 'Coach applications']];
 export const ALL_PERMS = { users: true, sessions: true, coaches: true, bookings: true, applications: true };
 
+// Name and mobile are required for every account (the super admin is exempt: no profile record).
+export const validPhone = (v) => String(v || '').replace(/\D/g, '').length >= 7;
+export function profileComplete(user, profile) {
+  if (isOwner(user)) return true;
+  return !!profile && String(profile.name || '').trim().length >= 2 && validPhone(profile.phone);
+}
+
 // Loads (or on first login creates) the user's profile. Returns { profile, isNew }.
 // The super admin has no profile document, so no other admin can ever see that account.
 export async function ensureProfile(user, extra = {}) {

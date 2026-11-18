@@ -1,7 +1,7 @@
 import {
   auth, $, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, updateProfile, sendEmailVerification, sendPasswordResetEmail,
-  ensureProfile, roleOf, backend, friendlyError, BACKEND
+  ensureProfile, roleOf, backend, friendlyError, BACKEND, profileComplete, validPhone
 } from './fb.js';
 
 const err = $('err'), ok = $('ok');
@@ -39,6 +39,7 @@ $('form-up').onsubmit = async (e) => {
   const name = $('up-name').value.trim(), phone = $('up-phone').value.trim();
   const email = $('up-email').value.trim(), pass = $('up-pass').value;
   if (name.length < 2) return show(err, 'Enter your full name.');
+  if (!validPhone(phone)) return show(err, 'Enter your mobile number so your coach can reach you.');
   if (!email) return show(err, 'Enter your email.');
   if (pass.length < 8) return show(err, 'Use a password with at least 8 characters.');
   busy(true);
@@ -69,6 +70,8 @@ async function afterLogin(user) {
     const { profile, isNew } = await ensureProfile(user, signupExtra || {});
     if (isNew) { try { await backend('welcome', { name: profile.name || '' }); } catch (x) { /* email is best effort */ } }
     const role = roleOf(user, profile);
+    // Missing name or mobile (e.g. first Google sign-in): finish the profile first
+    if (role !== 'blocked' && !profileComplete(user, profile)) { location.replace('account.html#complete'); return; }
     location.replace(role === 'admin' ? 'admin.html' : 'account.html');
   } catch (x) {
     handled = false; busy(false); show(err, friendlyError(x));

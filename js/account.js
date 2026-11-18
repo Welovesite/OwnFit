@@ -1,7 +1,7 @@
 import {
   auth, db, $, esc, onAuthStateChanged, signOut, ensureProfile, roleOf, isOwner, fmtDate, remaining, friendlyError, localNow,
   collection, query, where, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
-  updateProfile, updatePassword, reauthenticateWithCredential, EmailAuthProvider, BACKEND
+  updateProfile, updatePassword, reauthenticateWithCredential, EmailAuthProvider, BACKEND, profileComplete, validPhone
 } from './fb.js';
 
 const app = $('app');
@@ -50,6 +50,37 @@ async function route() {
   return renderMain();
 }
 
+/* ---------------- Complete your profile (required before anything else) ---------------- */
+function renderComplete(role) {
+  app.innerHTML = '<div class="card hot" style="max-width:560px;margin:10px auto">' +
+    '<span class="label">One last step</span><h1 style="margin:4px 0">Complete your profile</h1>' +
+    '<p class="muted" style="margin:0">We need your name and mobile number so your coach and the OwnFit team can reach you.</p>' +
+    '<form id="cp" class="stack" novalidate style="margin-top:12px">' +
+      '<div class="field"><label for="cp-name">Full name *</label><input id="cp-name" maxlength="80" autocomplete="name" required value="' + esc(profile.name || me.displayName || '') + '"></div>' +
+      '<div class="field"><label for="cp-phone">Mobile number *</label><input id="cp-phone" type="tel" dir="ltr" maxlength="30" autocomplete="tel" placeholder="+971 5X XXX XXXX" required value="' + esc(profile.phone || '') + '"></div>' +
+      '<div class="field"><label for="cp-email">Email</label><input id="cp-email" type="email" dir="ltr" value="' + esc(me.email || '') + '" readonly></div>' +
+      '<p class="err" id="cp-err" role="alert" hidden></p>' +
+      '<button class="btn btn-red btn-block" type="submit" id="cp-save">Save and continue</button>' +
+    '</form></div>';
+  setTimeout(() => { const el = !String(profile.name || me.displayName || '').trim() ? $('cp-name') : $('cp-phone'); el.focus(); }, 0);
+  $('cp').onsubmit = async (e) => {
+    e.preventDefault();
+    const name = $('cp-name').value.trim().slice(0, 80), phone = $('cp-phone').value.trim().slice(0, 30), er = $('cp-err');
+    const fail = (m, el) => { er.textContent = m; er.hidden = false; el.focus(); };
+    if (name.length < 2) return fail('Please enter your full name.', $('cp-name'));
+    if (!validPhone(phone)) return fail('Please enter a valid mobile number.', $('cp-phone'));
+    const b = $('cp-save'); b.disabled = true;
+    try {
+      await updateDoc(doc(db, 'users', me.uid), { name, phone });
+      if (me.displayName !== name) { try { await updateProfile(me, { displayName: name }); } catch (x) { /* not critical */ } }
+      profile.name = name; profile.phone = phone;
+      if (history.replaceState) history.replaceState(null, '', location.pathname);
+      if (role === 'admin') { location.replace('admin.html'); return; }
+      toast('Thanks – your profile is complete'); view = 'main'; route();
+    } catch (x) { b.disabled = false; fail(friendlyError(x), $('cp-save')); }
+  };
+}
+
 /* ---------------- My profile (everyone) ---------------- */
 async function renderProfile() {
   const self = !viewing;
@@ -82,8 +113,8 @@ async function renderProfile() {
   app.innerHTML = header(mainLabel === 'My sessions' ? 'Coach dashboard' : 'My training') + tabsHtml() +
     '<section class="card"><h2 style="margin:0">Personal details</h2>' +
     '<form id="pf" class="grid2" novalidate>' +
-      '<div class="field"><label for="pf-name">Full name</label><input id="pf-name" maxlength="80" autocomplete="name" required value="' + esc(profile.name || '') + '"></div>' +
-      (ownerSelf ? '' : '<div class="field"><label for="pf-phone">Mobile number</label><input id="pf-phone" type="tel" dir="ltr" maxlength="30" autocomplete="tel" placeholder="+971 5X XXX XXXX" value="' + esc(profile.phone || '') + '"></div>') +
+      '<div class="field"><label for="pf-name">Full name *</label><input id="pf-name" maxlength="80" autocomplete="name" required value="' + esc(profile.name || '') + '"></div>' +
+      (ownerSelf ? '' : '<div class="field"><label for="pf-phone">Mobile number *</label><input id="pf-phone" type="tel" dir="ltr" maxlength="30" autocomplete="tel" placeholder="+971 5X XXX XXXX" value="' + esc(profile.phone || '') + '"></div>') +
       '<div class="field"><label for="pf-email">Email (login)</label><input id="pf-email" type="email" dir="ltr" value="' + esc(who.email || profile.email || '') + '" readonly></div>' +
       '<div class="field"><label>Account</label><input value="' + esc(roleName + (since ? ' · since ' + since : '')) + '" readonly></div>' +
       '<p class="small muted" style="grid-column:1/-1;margin:0">Need to change your login email? Message OwnFit and we’ll update it for you.</p>' +
@@ -107,7 +138,7 @@ async function renderProfile() {
     e.preventDefault();
     const name = $('pf-name').value.trim().slice(0, 80), phone = ownerSelf ? '' : $('pf-phone').value.trim().slice(0, 30);
     if (name.length < 2) { toast('Please enter your full name.'); $('pf-name').focus(); return; }
-    if (phone && phone.replace(/\D/g, '').length < 7) { toast('Please enter a valid mobile number.'); $('pf-phone').focus(); return; }
+    if (!ownerSelf && !validPhone(phone)) { toast('Your mobile number is required.'); $('pf-phone').focus(); return; }
     const btn = $('pf-save'); btn.disabled = true;
     try {
       if (!ownerSelf) await updateDoc(doc(db, 'users', who.uid), { name, phone });
@@ -267,6 +298,8 @@ onAuthStateChanged(auth, async (user) => {
     // Trainers, and admins the super admin has also made a trainer, get the trainer dashboard
     if ((role === 'coach' || role === 'admin') && profile.coachId) { mainLabel = 'My sessions'; renderMain = renderCoach; }
     else { mainLabel = 'My training'; renderMain = renderClient; }
+    // Name and mobile are required: finish the profile before anything else
+    if (!viewing && !profileComplete(user, profile)) { renderComplete(role); return; }
     await route();
   } catch (x) {
     app.innerHTML = '<p class="err">' + esc(friendlyError(x)) + '</p>';

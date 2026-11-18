@@ -1,7 +1,7 @@
 import {
   auth, db, $, esc, onAuthStateChanged, signOut, ensureProfile, roleOf, isOwner, fmtDate, remaining, friendlyError,
   backend, SHEET_URL, OWNER_EMAIL, PERMS, ALL_PERMS, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc,
-  serverTimestamp, writeBatch, query, where
+  serverTimestamp, writeBatch, query, where, profileComplete
 } from './fb.js';
 import { renderInsights } from './insights.js';
 
@@ -632,6 +632,7 @@ onAuthStateChanged(auth, async (user) => {
   try {
     const { profile } = await ensureProfile(user);
     if (roleOf(user, profile) !== 'admin') { location.replace('account.html'); return; }
+    if (!profileComplete(user, profile)) { location.replace('account.html#complete'); return; }
     const isSuper = isOwner(user);
     perms = isSuper ? ALL_PERMS : (profile.perms || {});
     myCoachId = profile.coachId || null; // set only when the super admin also made this admin a trainer
