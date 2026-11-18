@@ -10,7 +10,7 @@ const SERVICES = { 'personal-training': 'Personal Training', boxing: 'Boxing', k
 let me = null, users = [], coaches = [], packages = [], sessions = [], current = null;
 // SUPER = signed in as the super admin and not previewing another admin.
 // perms = what the current view may use; viewAs = the admin being previewed (super admin only).
-let SUPER = false, perms = {}, viewAs = null;
+let SUPER = false, perms = {}, viewAs = null, myCoachId = null;
 const can = (p) => !!perms[p];
 
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => { t.hidden = true; }, 3500); }
@@ -37,7 +37,7 @@ function shell() {
     '<a href="admin.html">Back to my admin</a></div>' : '';
   const who = viewAs || { email: me.email };
   app.innerHTML = banner + '<div class="who"><div><span class="label">' + (SUPER ? 'Super admin' : 'Admin') + '</span><h1>OwnFit admin</h1><p class="muted small">' + esc(who.email) + '</p></div>' +
-    (viewAs ? '' : '<a class="btn btn-line" href="account.html">My account view</a>') + '</div>' +
+    (viewAs ? '' : myCoachId ? '<a class="btn btn-red" href="account.html">My trainer dashboard</a>' : '<a class="btn btn-line" href="account.html">My account view</a>') + '</div>' +
     (tabs.length ? '<div class="tabs" role="tablist" style="margin-bottom:24px">' + tabs.map(([k, l]) =>
       '<button type="button" role="tab" data-tab="' + k + '" aria-selected="' + (k === current) + '">' + l + '</button>').join('') + '</div>' +
       '<div id="panel"></div>'
@@ -634,6 +634,7 @@ onAuthStateChanged(auth, async (user) => {
     if (roleOf(user, profile) !== 'admin') { location.replace('account.html'); return; }
     const isSuper = isOwner(user);
     perms = isSuper ? ALL_PERMS : (profile.perms || {});
+    myCoachId = profile.coachId || null; // set only when the super admin also made this admin a trainer
     SUPER = isSuper;
     const as = new URLSearchParams(location.search).get('as');
     if (isSuper) {
