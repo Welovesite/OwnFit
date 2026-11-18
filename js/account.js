@@ -56,7 +56,7 @@ async function renderProfile() {
   const ownerSelf = self && isOwner(me); // the super admin has no users/ record (so other admins never see it)
   const providers = self ? me.providerData.map((x) => x.providerId) : [profile.provider === 'google.com' ? 'google.com' : 'password'];
   const hasPw = providers.includes('password'), hasGoogle = providers.includes('google.com');
-  const since = profile.createdAt && profile.createdAt.toDate ? profile.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  const since = profile.createdAt && profile.createdAt.toDate ? profile.createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
   const roleName = { client: 'Customer', coach: 'Trainer', admin: 'Admin' }[profile.role] || 'Customer';
   let coachCard = '';
   if (profile.role === 'coach' && profile.coachId) {
@@ -85,7 +85,7 @@ async function renderProfile() {
       '<div class="field"><label for="pf-name">Full name</label><input id="pf-name" maxlength="80" autocomplete="name" required value="' + esc(profile.name || '') + '"></div>' +
       (ownerSelf ? '' : '<div class="field"><label for="pf-phone">Mobile number</label><input id="pf-phone" type="tel" dir="ltr" maxlength="30" autocomplete="tel" placeholder="+971 5X XXX XXXX" value="' + esc(profile.phone || '') + '"></div>') +
       '<div class="field"><label for="pf-email">Email (login)</label><input id="pf-email" type="email" dir="ltr" value="' + esc(who.email || profile.email || '') + '" readonly></div>' +
-      '<div class="field"><label>Account</label><input value="' + esc(roleName + (since ? ' · member since ' + since : '')) + '" readonly></div>' +
+      '<div class="field"><label>Account</label><input value="' + esc(roleName + (since ? ' · since ' + since : '')) + '" readonly></div>' +
       '<p class="small muted" style="grid-column:1/-1;margin:0">Need to change your login email? Message OwnFit and we’ll update it for you.</p>' +
       '<div style="grid-column:1/-1"><button class="btn btn-red" type="submit" id="pf-save">Save changes</button></div>' +
     '</form></section>' +
