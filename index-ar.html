@@ -212,7 +212,7 @@
     </div>
   </section>
 
-  <section class="block">
+  <section class="block" id="apply">
     <div class="wrap">
       <div class="coach">
         <div>
@@ -220,7 +220,28 @@
           <h2>انضم كمدرب إلى OwnFit</h2>
           <p>مدرب شخصي أو مدرب قتال معتمد في الإمارات؟ انضم إلى الفريق ودرّب العملاء في مختلف الإمارات وفق جدولك.</p>
         </div>
-        <a class="btn btn-red" href="#book" data-plan="coach-application">قدّم كمدرب</a>
+        <a class="btn btn-red" href="#apply" id="apply-open" aria-controls="apply-form" aria-expanded="false">قدّم كمدرب</a>
+        <form class="full apply-form wide" id="apply-form" novalidate hidden>
+          <div class="wide"><h3>طلب الانضمام كمدرب</h3><p class="muted">أخبرنا عن نفسك. يراجع فريقنا كل طلب ويتواصل مع المدربين المرشحين.</p></div>
+          <div class="field"><label for="a-name">الاسم الكامل</label><input id="a-name" maxlength="80" autocomplete="name" required></div>
+          <div class="field"><label for="a-phone">رقم الجوال</label><input id="a-phone" type="tel" dir="ltr" maxlength="30" autocomplete="tel" placeholder="+971 5X XXX XXXX" required></div>
+          <div class="field"><label for="a-email">البريد الإلكتروني</label><input id="a-email" type="email" dir="ltr" maxlength="120" autocomplete="email" required></div>
+          <div class="field"><label for="a-emirate">مكان الإقامة</label><select id="a-emirate"><option value="Dubai">دبي</option><option value="Abu Dhabi">أبوظبي</option><option value="Sharjah">الشارقة</option><option value="Ajman">عجمان</option><option value="Ras Al Khaimah">رأس الخيمة</option><option value="Umm Al Quwain">أم القيوين</option><option value="Fujairah">الفجيرة</option></select></div>
+          <div class="field"><label for="a-gender">الجنس</label><select id="a-gender"><option value="male">ذكر</option><option value="female">أنثى</option></select></div>
+          <div class="field"><label for="a-exp">خبرة التدريب</label><select id="a-exp"><option value="<1">أقل من سنة</option><option value="1-3">1–3 سنوات</option><option value="3-5">3–5 سنوات</option><option value="5-10">5–10 سنوات</option><option value="10+">أكثر من 10 سنوات</option></select></div>
+          <fieldset class="field wide checks-field"><legend>ماذا تدرّب؟</legend><div class="checks"><label><input type="checkbox" name="a-disc" value="personal-training"> التدريب الشخصي</label><label><input type="checkbox" name="a-disc" value="boxing"> الملاكمة</label><label><input type="checkbox" name="a-disc" value="kickboxing"> الكيك بوكسينغ</label><label><input type="checkbox" name="a-disc" value="muay-thai"> المواي تاي</label></div></fieldset>
+          <div class="field wide"><label for="a-langs">لغات التدريب</label><input id="a-langs" maxlength="120" placeholder="مثال: العربية، الإنجليزية، الفرنسية"></div>
+          <div class="field wide"><label for="a-certs">الشهادات</label><textarea id="a-certs" maxlength="1500" placeholder="مثال: REPs UAE المستوى 3، ISSA CPT، رخصة مدرب ملاكمة" required></textarea></div>
+          <div class="field wide"><label for="a-about">الخبرة والإنجازات</label><textarea id="a-about" maxlength="2000" placeholder="أين درّبت، الألقاب، النزالات، نتائج العملاء…"></textarea></div>
+          <div class="field wide"><label for="a-link">إنستغرام أو موقع إلكتروني (اختياري)</label><input id="a-link" type="url" dir="ltr" maxlength="200" placeholder="https://instagram.com/…"></div>
+          <label class="consent wide"><input type="checkbox" id="a-consent" required> أوافق على أن تتواصل معي OwnFit بخصوص طلبي.</label>
+          <p class="err wide" id="a-err" role="alert" hidden></p>
+          <button type="submit" class="btn btn-red wide" id="a-submit" data-sending="جارٍ الإرسال…">إرسال الطلب</button>
+        </form>
+        <div class="done apply-done wide" id="apply-done" hidden tabindex="-1">
+          <h3>شكراً لتقديمك!</h3>
+          <p>شكراً لاهتمامك بالانضمام كمدرب إلى OwnFit الإمارات. لقد استلمنا طلبك وسيقوم فريقنا بمراجعته والتواصل معك قريباً.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -253,7 +274,7 @@
         <div class="field"><label for="f-phone">رقم الجوال</label><input id="f-phone" name="phone" type="tel" dir="ltr" autocomplete="tel" placeholder="+971 5X XXX XXXX" required></div>
         <div class="field"><label for="f-disc">التدريب</label><select id="f-disc"><option value="personal-training">التدريب الشخصي</option><option value="boxing">الملاكمة</option><option value="kickboxing">الكيك بوكسينغ</option><option value="muay-thai">المواي تاي</option><option value="mix">مزيج من التخصصات</option></select></div>
         <div class="field"><label for="f-coachname">المدرب</label><select id="f-coachname"></select></div>
-        <div class="field"><label for="f-plan">الباقة</label><select id="f-plan"><option value="individual-12">12 جلسة – 3,500 درهم</option><option value="individual-16">16 جلسة – 4,200 درهم</option><option value="individual-24">24 جلسة – 6,000 درهم</option><option value="crew">المجموعة (عرض سعر)</option><option value="coach-application">طلب انضمام كمدرب</option><option value="not-sure">لم أقرر بعد</option></select></div>
+        <div class="field"><label for="f-plan">الباقة</label><select id="f-plan"><option value="individual-12">12 جلسة – 3,500 درهم</option><option value="individual-16">16 جلسة – 4,200 درهم</option><option value="individual-24">24 جلسة – 6,000 درهم</option><option value="crew">المجموعة (عرض سعر)</option><option value="not-sure">لم أقرر بعد</option></select></div>
         <div class="field"><label for="f-emirate">الإمارة</label><select id="f-emirate"><option>دبي</option><option>أبوظبي</option><option>الشارقة</option><option>عجمان</option><option>رأس الخيمة</option><option>أم القيوين</option><option>الفجيرة</option></select></div>
         <div class="field"><label for="f-area">المنطقة / الحي</label><input id="f-area" placeholder="مثال: أبراج بحيرات الجميرا، جزيرة الريم"></div>
         <div class="field"><label for="f-time">الوقت المفضل</label><select id="f-time"><option>الصباح الباكر (6–9 صباحاً)</option><option>قبل الظهر (9 صباحاً–12 ظهراً)</option><option>بعد الظهر (12–5 مساءً)</option><option>المساء (5–9 مساءً)</option><option>آخر الليل (بعد 9 مساءً)</option></select></div>

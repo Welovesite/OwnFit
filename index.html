@@ -212,7 +212,7 @@
     </div>
   </section>
 
-  <section class="block">
+  <section class="block" id="apply">
     <div class="wrap">
       <div class="coach">
         <div>
@@ -220,7 +220,28 @@
           <h2>Coach with OwnFit</h2>
           <p>Certified personal trainer or fight coach in the UAE? Join the team and train clients across the emirates on your own schedule.</p>
         </div>
-        <a class="btn btn-red" href="#book" data-plan="coach-application">Apply to coach</a>
+        <a class="btn btn-red" href="#apply" id="apply-open" aria-controls="apply-form" aria-expanded="false">Apply to coach</a>
+        <form class="full apply-form wide" id="apply-form" novalidate hidden>
+          <div class="wide"><h3>Coach application</h3><p class="muted">Tell us about yourself. Our team reviews every application and contacts shortlisted trainers.</p></div>
+          <div class="field"><label for="a-name">Full name</label><input id="a-name" maxlength="80" autocomplete="name" required></div>
+          <div class="field"><label for="a-phone">Mobile number</label><input id="a-phone" type="tel" dir="ltr" maxlength="30" autocomplete="tel" placeholder="+971 5X XXX XXXX" required></div>
+          <div class="field"><label for="a-email">Email</label><input id="a-email" type="email" dir="ltr" maxlength="120" autocomplete="email" required></div>
+          <div class="field"><label for="a-emirate">Based in</label><select id="a-emirate"><option value="Dubai">Dubai</option><option value="Abu Dhabi">Abu Dhabi</option><option value="Sharjah">Sharjah</option><option value="Ajman">Ajman</option><option value="Ras Al Khaimah">Ras Al Khaimah</option><option value="Umm Al Quwain">Umm Al Quwain</option><option value="Fujairah">Fujairah</option></select></div>
+          <div class="field"><label for="a-gender">Gender</label><select id="a-gender"><option value="male">Male</option><option value="female">Female</option></select></div>
+          <div class="field"><label for="a-exp">Coaching experience</label><select id="a-exp"><option value="<1">Less than 1 year</option><option value="1-3">1–3 years</option><option value="3-5">3–5 years</option><option value="5-10">5–10 years</option><option value="10+">10+ years</option></select></div>
+          <fieldset class="field wide checks-field"><legend>What do you coach?</legend><div class="checks"><label><input type="checkbox" name="a-disc" value="personal-training"> Personal Training</label><label><input type="checkbox" name="a-disc" value="boxing"> Boxing</label><label><input type="checkbox" name="a-disc" value="kickboxing"> Kickboxing</label><label><input type="checkbox" name="a-disc" value="muay-thai"> Muay Thai</label></div></fieldset>
+          <div class="field wide"><label for="a-langs">Languages you coach in</label><input id="a-langs" maxlength="120" placeholder="e.g. English, Arabic, French"></div>
+          <div class="field wide"><label for="a-certs">Certifications</label><textarea id="a-certs" maxlength="1500" placeholder="e.g. REPs UAE Level 3, ISSA CPT, national boxing coach licence" required></textarea></div>
+          <div class="field wide"><label for="a-about">Experience & achievements</label><textarea id="a-about" maxlength="2000" placeholder="Where you have coached, titles, fights, client results…"></textarea></div>
+          <div class="field wide"><label for="a-link">Instagram or website (optional)</label><input id="a-link" type="url" dir="ltr" maxlength="200" placeholder="https://instagram.com/…"></div>
+          <label class="consent wide"><input type="checkbox" id="a-consent" required> I agree that OwnFit may contact me about my application.</label>
+          <p class="err wide" id="a-err" role="alert" hidden></p>
+          <button type="submit" class="btn btn-red wide" id="a-submit" data-sending="Sending…">Submit application</button>
+        </form>
+        <div class="done apply-done wide" id="apply-done" hidden tabindex="-1">
+          <h3>Thank you for applying!</h3>
+          <p>Thank you for your interest in becoming a trainer with OwnFit UAE. We have received your application – our team will review it and contact you soon.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -253,7 +274,7 @@
         <div class="field"><label for="f-phone">Mobile number</label><input id="f-phone" name="phone" type="tel" dir="ltr" autocomplete="tel" placeholder="+971 5X XXX XXXX" required></div>
         <div class="field"><label for="f-disc">Training</label><select id="f-disc"><option value="personal-training">Personal Training</option><option value="boxing">Boxing</option><option value="kickboxing">Kickboxing</option><option value="muay-thai">Muay Thai</option><option value="mix">A mix</option></select></div>
         <div class="field"><label for="f-coachname">Coach</label><select id="f-coachname"></select></div>
-        <div class="field"><label for="f-plan">Package</label><select id="f-plan"><option value="individual-12">12 sessions – AED 3,500</option><option value="individual-16">16 sessions – AED 4,200</option><option value="individual-24">24 sessions – AED 6,000</option><option value="crew">Crew (group quote)</option><option value="coach-application">Coach application</option><option value="not-sure">Not sure yet</option></select></div>
+        <div class="field"><label for="f-plan">Package</label><select id="f-plan"><option value="individual-12">12 sessions – AED 3,500</option><option value="individual-16">16 sessions – AED 4,200</option><option value="individual-24">24 sessions – AED 6,000</option><option value="crew">Crew (group quote)</option><option value="not-sure">Not sure yet</option></select></div>
         <div class="field"><label for="f-emirate">Emirate</label><select id="f-emirate"><option>Dubai</option><option>Abu Dhabi</option><option>Sharjah</option><option>Ajman</option><option>Ras Al Khaimah</option><option>Umm Al Quwain</option><option>Fujairah</option></select></div>
         <div class="field"><label for="f-area">Area / community</label><input id="f-area" placeholder="e.g. JLT, Al Reem Island"></div>
         <div class="field"><label for="f-time">Preferred time</label><select id="f-time"><option>Early morning (6–9 AM)</option><option>Late morning (9 AM–12 PM)</option><option>Afternoon (12–5 PM)</option><option>Evening (5–9 PM)</option><option>Late evening (after 9 PM)</option></select></div>
