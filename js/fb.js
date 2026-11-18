@@ -37,8 +37,8 @@ export function esc(v) {
 export function isOwner(user) { return !!user && user.email === OWNER_EMAIL && user.emailVerified; }
 
 // Areas the super admin can switch on/off for each admin
-export const PERMS = [['users', 'Users & access'], ['sessions', 'Sessions & packages'], ['coaches', 'Coaches & website'], ['bookings', 'Bookings sheet']];
-export const ALL_PERMS = { users: true, sessions: true, coaches: true, bookings: true };
+export const PERMS = [['users', 'Users & access'], ['sessions', 'Sessions & packages'], ['coaches', 'Coaches & website'], ['bookings', 'Bookings sheet'], ['applications', 'Coach applications']];
+export const ALL_PERMS = { users: true, sessions: true, coaches: true, bookings: true, applications: true };
 
 // Loads (or on first login creates) the user's profile. Returns { profile, isNew }.
 // The super admin has no profile document, so no other admin can ever see that account.

@@ -263,6 +263,65 @@ window.OWNFIT_START = function () {
     });
   }
 
+  /* ---------- Coach application (home page) ---------- */
+  var aForm = $('apply-form'), aOpen = $('apply-open');
+  if (aForm && aOpen) {
+    var AERR = LANG === 'ar'
+      ? { req: 'يرجى إدخال الاسم ورقم الجوال والبريد الإلكتروني والشهادات.', email: 'يرجى إدخال بريد إلكتروني صحيح.', disc: 'اختر تخصصاً واحداً على الأقل.', consent: 'يرجى الموافقة على التواصل معك.', fail: 'تعذّر إرسال الطلب. حاول مرة أخرى أو راسلنا على واتساب.' }
+      : { req: 'Please add your name, mobile, email and certifications.', email: 'Please enter a valid email address.', disc: 'Pick at least one discipline you coach.', consent: 'Please tick the box so we can contact you.', fail: 'We couldn’t send your application. Please try again or message us on WhatsApp.' };
+    var aOpenedAt = 0, aTrap = document.createElement('input');
+    aTrap.type = 'text'; aTrap.tabIndex = -1; aTrap.autocomplete = 'off'; aTrap.setAttribute('aria-hidden', 'true');
+    aTrap.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;opacity:0';
+    aForm.appendChild(aTrap);
+    var showApply = function (focus) {
+      if (!$('apply-done').hidden) return;
+      aForm.hidden = false; aOpen.setAttribute('aria-expanded', 'true');
+      if (!aOpenedAt) aOpenedAt = Date.now();
+      aForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (focus) $('a-name').focus({ preventScroll: true });
+    };
+    aOpen.addEventListener('click', function (e) { e.preventDefault(); showApply(true); if (history.replaceState) history.replaceState(null, '', '#apply'); });
+    if (location.hash === '#apply') showApply(false);
+    window.addEventListener('hashchange', function () { if (location.hash === '#apply') showApply(false); });
+    aForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = function (id) { return $(id).value.trim(); };
+      var err = $('a-err'), btn = $('a-submit');
+      var fail = function (msg, el) { err.textContent = msg; err.hidden = false; if (el) el.focus(); };
+      var discs = Array.prototype.slice.call(aForm.querySelectorAll('input[name="a-disc"]:checked')).map(function (c) { return c.value; });
+      if (v('a-name').length < 2) return fail(AERR.req, $('a-name'));
+      if (v('a-phone').replace(/\D/g, '').length < 7) return fail(AERR.req, $('a-phone'));
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v('a-email'))) return fail(AERR.email, $('a-email'));
+      if (!discs.length) return fail(AERR.disc, aForm.querySelector('input[name="a-disc"]'));
+      if (v('a-certs').length < 2) return fail(AERR.req, $('a-certs'));
+      if (!$('a-consent').checked) return fail(AERR.consent, $('a-consent'));
+      err.hidden = true;
+      var done = function () {
+        aForm.hidden = true; aOpen.hidden = true;
+        var d = $('apply-done'); d.hidden = false; d.focus({ preventScroll: true });
+        d.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (window.ownfitTrack) window.ownfitTrack('form', 'Coach application');
+      };
+      // Bots fill the hidden field or submit instantly: show the thank-you but save nothing
+      if (aTrap.value || Date.now() - aOpenedAt < 4000) return done();
+      var S = function (x) { return { stringValue: String(x).slice(0, 2000) }; };
+      var link = v('a-link');
+      if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
+      var fields = {
+        name: S(v('a-name').slice(0, 80)), phone: S(v('a-phone').slice(0, 30)), email: S(v('a-email').toLowerCase().slice(0, 120)),
+        emirate: S($('a-emirate').value), gender: S($('a-gender').value), experience: S($('a-exp').value),
+        disciplines: { arrayValue: { values: discs.map(S) } },
+        languages: S(v('a-langs').slice(0, 120)), certifications: S(v('a-certs').slice(0, 1500)), about: S(v('a-about').slice(0, 2000)),
+        link: S(link.slice(0, 200)), lang: S(LANG), status: S('new'), createdAt: { timestampValue: new Date().toISOString() }
+      };
+      var label = btn.textContent; btn.disabled = true; btn.textContent = btn.getAttribute('data-sending');
+      fetch('https://firestore.googleapis.com/v1/projects/ownfit-baea8/databases/(default)/documents/applications?key=AIzaSyBPu2_PTeWKDNcch-AQ7tfI4_z1nbhdwUs', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: fields })
+      }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); done(); })
+        .catch(function () { btn.disabled = false; btn.textContent = label; fail(AERR.fail); });
+    });
+  }
+
   /* ---------- Booking (home page) ---------- */
   var full = $('full');
   if (!full) return;

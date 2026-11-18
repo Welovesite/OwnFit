@@ -29,7 +29,7 @@ const coachName = (id) => (coaches.find((c) => c.id === id) || {}).name || id ||
 const userLabel = (u) => (u.name ? u.name + ' — ' : '') + u.email;
 
 function shell() {
-  const tabs = [['users', 'Users & access', 'users'], ['packages', 'Sessions & packages', 'sessions'], ['coaches', 'Coaches', 'coaches'], ['bookings', 'Bookings', 'bookings']]
+  const tabs = [['users', 'Users & access', 'users'], ['packages', 'Sessions & packages', 'sessions'], ['coaches', 'Coaches', 'coaches'], ['bookings', 'Bookings', 'bookings'], ['applications', 'Coach applications', 'applications']]
     .filter((t) => can(t[2]));
   if (SUPER) tabs.push(['insights', 'Visitors', 'insights']); // super admin only
   if (!tabs.some((t) => t[0] === current)) current = tabs.length ? tabs[0][0] : null;
@@ -43,7 +43,7 @@ function shell() {
       '<div id="panel"></div>'
       : '<div class="card"><h2>No access yet</h2><p>Your admin account has no areas switched on. Ask the super admin to give you access.</p></div>');
   app.querySelectorAll('[data-tab]').forEach((b) => { b.onclick = () => { current = b.dataset.tab; shell(); }; });
-  if (current) ({ users: renderUsers, packages: renderPackages, coaches: renderCoaches, bookings: renderBookings, insights: () => renderInsights($('panel'), coaches) })[current]();
+  if (current) ({ users: renderUsers, packages: renderPackages, coaches: renderCoaches, bookings: renderBookings, applications: renderApplications, insights: () => renderInsights($('panel'), coaches) })[current]();
 }
 
 /* ======================= Users & access ======================= */
@@ -516,6 +516,79 @@ function renderBookings() {
     '<div><a class="btn btn-red" href="' + SHEET_URL + '" target="_blank" rel="noopener">Open bookings sheet</a></div>' +
     '<p class="small muted">When a client pays: make sure they have an account (they sign up at ownfit.ae/login.html), then assign their package in “Sessions & packages”.</p>' +
     (SUPER ? '<p class="small muted">Other admins can open the sheet only if you share it with their Google account in Google Drive.</p>' : '') + '</div>';
+}
+
+/* ======================= Coach applications ======================= */
+const APP_STATUS = [['new', 'New'], ['contacted', 'Contacted'], ['interview', 'Interview'], ['accepted', 'Accepted'], ['rejected', 'Rejected']];
+const APP_EXP = { '<1': 'Less than 1 year', '1-3': '1–3 years', '3-5': '3–5 years', '5-10': '5–10 years', '10+': '10+ years' };
+let apps = [], appFilter = 'open', appOpen = null;
+const tsIso = (t) => (t && t.toDate ? t.toDate().toISOString() : t || '');
+async function renderApplications() {
+  const panel = $('panel');
+  panel.innerHTML = '<p><span class="spinner"></span> Loading applications…</p>';
+  try {
+    const snap = await getDocs(collection(db, 'applications'));
+    apps = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => String(tsIso(b.createdAt)).localeCompare(String(tsIso(a.createdAt))));
+  } catch (x) { panel.innerHTML = '<p class="err">' + esc(friendlyError(x)) + '</p>'; return; }
+  drawApplications();
+}
+function drawApplications() {
+  const panel = $('panel'); if (!panel) return;
+  const count = (k) => apps.filter((a) => (k === 'open' ? !['accepted', 'rejected'].includes(a.status) : k === 'all' || a.status === k)).length;
+  const list = apps.filter((a) => (appFilter === 'open' ? !['accepted', 'rejected'].includes(a.status) : appFilter === 'all' || a.status === appFilter));
+  const filters = [['open', 'Open'], ...APP_STATUS, ['all', 'All']];
+  const pillCls = { new: 'scheduled', contacted: 'coach', interview: 'coach', accepted: 'done', rejected: 'cancelled' };
+  const statusName = (k) => (APP_STATUS.find((x) => x[0] === k) || [k, k])[1];
+  panel.innerHTML = '<div class="card"><h2>Coach applications</h2><p class="small muted">Sent from “Apply to coach” on the website. Applicants see a thank-you message – nothing goes to WhatsApp.</p>' +
+    '<div class="tabs" role="tablist">' + filters.map(([k, l]) => '<button type="button" data-afilter="' + k + '" aria-selected="' + (k === appFilter) + '">' + l + ' (' + count(k) + ')</button>').join('') + '</div></div>' +
+    (list.length ? list.map((a) => {
+      const open = appOpen === a.id;
+      const wa = String(a.phone || '').replace(/\D/g, '').replace(/^0+/, '');
+      const waNum = wa.length === 9 && wa[0] === '5' ? '971' + wa : wa;
+      return '<div class="card' + (a.status === 'new' ? ' hot' : '') + '">' +
+        '<div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">' +
+          '<div><h3 style="margin:0">' + esc(a.name) + ' <span class="pill ' + (pillCls[a.status] || '') + '">' + esc(statusName(a.status)) + '</span></h3>' +
+          '<p class="small muted" style="margin:4px 0 0">' + esc((a.disciplines || []).map((d) => SERVICES[d] || d).join(', ')) + ' · ' + esc(a.emirate || '') +
+            ' · ' + esc(APP_EXP[a.experience] || a.experience || '') + ' · Applied ' + esc(fmtDate(tsIso(a.createdAt))) + '</p></div>' +
+          '<button type="button" class="btn btn-line btn-sm" data-aopen="' + esc(a.id) + '">' + (open ? 'Hide' : 'View') + '</button></div>' +
+        (open ? '<dl class="facts" style="margin:8px 0">' +
+          [['Mobile', '<span dir="ltr">' + esc(a.phone) + '</span>' + (waNum ? ' · <a href="https://wa.me/' + esc(waNum) + '" target="_blank" rel="noopener">WhatsApp</a>' : '')],
+           ['Email', '<a href="mailto:' + esc(a.email) + '">' + esc(a.email) + '</a>'],
+           ['Gender', esc(a.gender === 'female' ? 'Female' : a.gender === 'male' ? 'Male' : '')],
+           ['Languages', esc(a.languages || '')],
+           ['Instagram / website', a.link && /^https?:\/\//i.test(a.link) ? '<a href="' + esc(a.link) + '" target="_blank" rel="noopener nofollow">' + esc(a.link) + '</a>' : esc(a.link || '')],
+           ['Form language', a.lang === 'ar' ? 'Arabic' : 'English']]
+            .filter((f) => f[1]).map((f) => '<div><dt>' + f[0] + '</dt><dd>' + f[1] + '</dd></div>').join('') + '</dl>' +
+          '<div><strong>Certifications</strong><p style="white-space:pre-line;margin:4px 0 12px">' + esc(a.certifications || '–') + '</p></div>' +
+          (a.about ? '<div><strong>Experience &amp; achievements</strong><p style="white-space:pre-line;margin:4px 0 12px">' + esc(a.about) + '</p></div>' : '') +
+          '<div class="grid2"><div class="field"><label for="as-' + esc(a.id) + '">Status</label><select id="as-' + esc(a.id) + '">' +
+            APP_STATUS.map(([k, l]) => '<option value="' + k + '"' + (a.status === k ? ' selected' : '') + '>' + l + '</option>').join('') + '</select></div>' +
+          '<div class="field"><label for="an-' + esc(a.id) + '">Private notes</label><textarea id="an-' + esc(a.id) + '" maxlength="2000" rows="2">' + esc(a.notes || '') + '</textarea></div></div>' +
+          '<div class="row" style="gap:10px;flex-wrap:wrap"><button type="button" class="btn btn-red btn-sm" data-asave="' + esc(a.id) + '">Save</button>' +
+          (SUPER ? '<button type="button" class="btn btn-line btn-sm" data-adel="' + esc(a.id) + '">Delete</button>' : '') + '</div>' +
+          (a.updatedAt ? '<p class="small muted">Last updated ' + esc(fmtDate(tsIso(a.updatedAt))) + '</p>' : '') : '') +
+      '</div>';
+    }).join('') : '<div class="card"><p class="muted">No applications here yet.</p></div>');
+  panel.querySelectorAll('[data-afilter]').forEach((b) => { b.onclick = () => { appFilter = b.dataset.afilter; drawApplications(); }; });
+  panel.querySelectorAll('[data-aopen]').forEach((b) => { b.onclick = () => { appOpen = appOpen === b.dataset.aopen ? null : b.dataset.aopen; drawApplications(); }; });
+  panel.querySelectorAll('[data-asave]').forEach((b) => {
+    b.onclick = async () => {
+      const id = b.dataset.asave, a = apps.find((x) => x.id === id);
+      const patch = { status: $('as-' + id).value, notes: $('an-' + id).value.trim().slice(0, 2000), updatedAt: serverTimestamp(), updatedBy: me.email };
+      b.disabled = true;
+      try { await updateDoc(doc(db, 'applications', id), patch); Object.assign(a, patch, { updatedAt: new Date().toISOString() }); toast('Saved'); drawApplications(); }
+      catch (x) { b.disabled = false; toast(friendlyError(x)); }
+    };
+  });
+  panel.querySelectorAll('[data-adel]').forEach((b) => {
+    b.onclick = async () => {
+      const id = b.dataset.adel, a = apps.find((x) => x.id === id);
+      if (!confirm('Delete the application from ' + (a.name || 'this person') + '? This cannot be undone.')) return;
+      try { await deleteDoc(doc(db, 'applications', id)); apps = apps.filter((x) => x.id !== id); toast('Deleted'); drawApplications(); }
+      catch (x) { toast(friendlyError(x)); }
+    };
+  });
 }
 
 /* ======================= Helpers ======================= */
