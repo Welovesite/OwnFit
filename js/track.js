@@ -44,6 +44,7 @@
         dv: { stringValue: device }, lg: { stringValue: lang }
       };
       if (label) f.l = { stringValue: String(label).replace(/\s+/g, ' ').trim().slice(0, 80) };
+      var uid = get(ls, 'ownfit_uid'); if (uid && /^[A-Za-z0-9_-]{1,128}$/.test(uid)) f.u = { stringValue: uid };
       if (type === 'view') { f.n = { booleanValue: newVisit }; if (newVisit) f.r = { stringValue: source() }; newVisit = false; }
       try {
         fetch(URL, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: f }) })

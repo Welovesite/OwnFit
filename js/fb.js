@@ -50,15 +50,26 @@ export function profileComplete(user, profile) {
 
 // Loads (or on first login creates) the user's profile. Returns { profile, isNew }.
 // The super admin has no profile document, so no other admin can ever see that account.
+// The website's visitor counter keeps a random id per browser (ownfit_vid). Linking it to the
+// signed-in account lets the super admin see that person's visits; ownfit_uid tags new events.
+function browserVid() { try { return localStorage.getItem('ownfit_vid') || ''; } catch (e) { return ''; } }
+function markUser(uid) { try { if (uid) localStorage.setItem('ownfit_uid', uid); else localStorage.removeItem('ownfit_uid'); } catch (e) { /* ignore */ } }
+onAuthStateChanged(auth, (u) => { if (!u || isOwner(u)) markUser(''); });
+
 export async function ensureProfile(user, extra = {}) {
   if (isOwner(user)) {
     return { profile: { id: user.uid, email: user.email, name: user.displayName || 'Super admin', role: 'admin', status: 'active', super: true, perms: ALL_PERMS }, isNew: false };
   }
   const ref = doc(db, 'users', user.uid);
   const snap = await getDoc(ref);
+  const vid = browserVid();
+  markUser(user.uid);
   if (snap.exists()) {
-    try { await updateDoc(ref, { lastLogin: serverTimestamp() }); } catch (e) { /* blocked users can still be read */ }
-    return { profile: { id: user.uid, ...snap.data() }, isNew: false };
+    const data = snap.data(), patch = { lastLogin: serverTimestamp() };
+    const vids = Array.isArray(data.visitorIds) ? data.visitorIds : [];
+    if (/^[a-z0-9]{6,24}$/.test(vid) && vids[vids.length - 1] !== vid) patch.visitorIds = vids.filter((x) => x !== vid).concat(vid).slice(-20);
+    try { await updateDoc(ref, patch); } catch (e) { /* blocked users can still be read */ }
+    return { profile: { id: user.uid, ...data }, isNew: false };
   }
   const profile = {
     email: user.email || '',
@@ -68,6 +79,7 @@ export async function ensureProfile(user, extra = {}) {
     provider: (user.providerData[0] && user.providerData[0].providerId) || 'password',
     createdAt: serverTimestamp(), lastLogin: serverTimestamp()
   };
+  if (/^[a-z0-9]{6,24}$/.test(vid)) profile.visitorIds = [vid];
   await setDoc(ref, profile);
   return { profile: { id: user.uid, ...profile }, isNew: true };
 }

@@ -143,6 +143,7 @@ function sourceName(h) {
   if (/youtube/.test(h)) return 'YouTube';
   return h;
 }
+export const names = { pageName, clickName, formName, sourceName, setCoaches: (c) => { coachList = c || []; } };
 const regroup = (o, fn) => { const out = {}; Object.keys(o).forEach((k) => bump(out, fn(k), o[k])); return out; };
 
 /* ---------- drawing ---------- */

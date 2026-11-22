@@ -3,7 +3,7 @@ import {
   backend, SHEET_URL, OWNER_EMAIL, PERMS, ALL_PERMS, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc,
   serverTimestamp, writeBatch, query, where, profileComplete
 } from './fb.js';
-import { renderInsights } from './insights.js';
+import { renderInsights, names as N } from './insights.js';
 
 const app = $('app');
 const SERVICES = { 'personal-training': 'Personal Training', boxing: 'Boxing', kickboxing: 'Kickboxing', 'muay-thai': 'Muay Thai' };
@@ -64,6 +64,7 @@ function renderUsers() {
       '<td>' + (locked ? '<span class="pill ' + (u.status === 'blocked' ? 'blocked' : 'client') + '">' + (u.status === 'blocked' ? 'inactive' : 'active') + '</span>'
         : '<select data-f="status">' + opt('active', 'Active', u.status === 'blocked' ? '' : 'active') + opt('blocked', 'Inactive', u.status) + '</select>') + '</td>' +
       '<td>' + pk + '</td><td class="small muted">' + esc(u.provider === 'google.com' ? 'Google' : 'Email') + '</td>' +
+      '<td class="small">' + (u.lastLogin ? (SUPER ? '<button type="button" class="link" data-activity="' + esc(u.id) + '" title="See what they did on the website">' + esc(fmtLogin(u.lastLogin)) + '</button>' : esc(fmtLogin(u.lastLogin))) : '<span class="muted">Never</span>') + '</td>' +
       (SUPER ? '<td><span class="row" style="gap:6px;flex-wrap:nowrap">' +
         '<button class="btn btn-line btn-sm" data-login="' + esc(u.id) + '">Login</button>' +
         (isAdm ? '<button class="btn btn-line btn-sm" data-perm="' + esc(u.id) + '">Access</button>' : '') +
@@ -83,8 +84,8 @@ function renderUsers() {
     '<button class="btn btn-red" type="submit" id="a-submit">Create account</button></form><div id="acc-result"></div></details>' : '';
   $('panel').innerHTML = addForm + '<p class="muted">Everyone who signs in appears here as a <strong>client</strong>. To give a trainer their dashboard, set Role = Coach and link them to their coach profile. Inactive users can’t see anything.' +
     (SUPER ? ' As super admin you can make admins, choose what each admin can access, view any account as that person, and delete accounts. To make an admin <strong>also a trainer</strong>, pick their trainer profile on their row – admins have no trainer access unless you do.' : '') + '</p>' +
-    '<div class="table-wrap"><table class="t"><thead><tr><th>User</th><th>Role</th><th>Trainer profile</th><th>Access</th><th>Packages</th><th>Login</th>' + (SUPER ? '<th></th>' : '') + '</tr></thead><tbody>' +
-    (rows || '<tr><td colspan="7" class="muted">No users yet.</td></tr>') + '</tbody></table></div><div id="u-detail" style="margin-top:24px"></div>';
+    '<div class="table-wrap"><table class="t"><thead><tr><th>User</th><th>Role</th><th>Trainer profile</th><th>Access</th><th>Packages</th><th>Login</th><th>Last login</th>' + (SUPER ? '<th></th>' : '') + '</tr></thead><tbody>' +
+    (rows || '<tr><td colspan="8" class="muted">No users yet.</td></tr>') + '</tbody></table></div><div id="u-detail" style="margin-top:24px"></div>';
   $('panel').querySelectorAll('select[data-f]').forEach((s) => {
     s.onchange = async () => {
       const uid = s.closest('tr').dataset.uid, f = s.dataset.f, u = users.find((x) => x.id === uid);
@@ -101,6 +102,7 @@ function renderUsers() {
   $('panel').querySelectorAll('[data-perm]').forEach((b) => { b.onclick = () => editPerms(b.dataset.perm); });
   $('panel').querySelectorAll('[data-deluser]').forEach((b) => { b.onclick = () => deleteUser(b.dataset.deluser); });
   $('panel').querySelectorAll('[data-login]').forEach((b) => { b.onclick = () => loginPanel(b.dataset.login); });
+  $('panel').querySelectorAll('[data-activity]').forEach((b) => { b.onclick = () => activityPanel(b.dataset.activity); });
   if (SUPER) wireAddAccount();
 }
 
@@ -526,6 +528,76 @@ function renderBookings() {
     '<div><a class="btn btn-red" href="' + SHEET_URL + '" target="_blank" rel="noopener">Open bookings sheet</a></div>' +
     '<p class="small muted">When a client pays: make sure they have an account (they sign up at ownfit.ae/login.html), then assign their package in “Sessions & packages”.</p>' +
     (SUPER ? '<p class="small muted">Other admins can open the sheet only if you share it with their Google account in Google Drive.</p>' : '') + '</div>';
+}
+
+/* ======================= User activity (super admin) ======================= */
+const toDateObj = (t) => (t && t.toDate ? t.toDate() : t ? new Date(t) : null);
+function fmtLogin(t) {
+  const d = toDateObj(t); if (!d || isNaN(d)) return '';
+  return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dubai' });
+}
+const fmtTime = (d) => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Dubai' });
+const fmtDay = (d) => d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Dubai' });
+let actRange = 30;
+async function activityPanel(uid) {
+  const u = users.find((x) => x.id === uid); if (!u || !SUPER) return;
+  N.setCoaches(coaches);
+  const box = $('u-detail');
+  box.innerHTML = '<div class="card hot"><p class="muted"><span class="spinner"></span> Loading activity…</p></div>';
+  box.scrollIntoView({ behavior: 'smooth' });
+  const vids = (u.visitorIds || []).filter((v) => typeof v === 'string');
+  let evs = [];
+  try {
+    for (let i = 0; i < vids.length; i += 10) {
+      const snap = await getDocs(query(collection(db, 'events'), where('v', 'in', vids.slice(i, i + 10))));
+      snap.forEach((d) => evs.push(d.data()));
+    }
+  } catch (x) { box.innerHTML = '<div class="card hot"><p class="err">' + esc(friendlyError(x)) + '</p></div>'; return; }
+  // Same browser used by someone else while signed in to another account: leave those out
+  evs = evs.filter((e) => !e.u || e.u === uid).map((e) => ({ ...e, when: toDateObj(e.at) })).filter((e) => e.when && !isNaN(e.when));
+  const from = actRange ? Date.now() - actRange * 864e5 : 0;
+  const list = evs.filter((e) => e.when.getTime() >= from).sort((a, b) => a.when - b.when);
+  // Group into visits
+  const visits = new Map();
+  list.forEach((e) => { if (!visits.has(e.s)) visits.set(e.s, []); visits.get(e.s).push(e); });
+  const vs = [...visits.values()].sort((a, b) => b[0].when - a[0].when);
+  const views = list.filter((e) => e.t === 'view'), clicks = list.filter((e) => e.t === 'click'), forms = list.filter((e) => e.t === 'form');
+  const count = (arr, fn) => { const o = {}; arr.forEach((e) => { const k = fn(e); o[k] = (o[k] || 0) + 1; }); return Object.entries(o).sort((a, b) => b[1] - a[1]); };
+  const topPages = count(views, (e) => N.pageName(e.p)), topClicks = count(clicks.concat(forms), (e) => (e.t === 'form' ? '📨 ' + N.formName(e.l || 'Form') : N.clickName(e.l || '(unnamed)')));
+  const mini = (title, rows) => '<div><h3 style="margin:0 0 8px">' + title + '</h3>' + (rows.length ? '<table class="t"><tbody>' +
+    rows.slice(0, 12).map(([k, n]) => '<tr><td>' + esc(k) + '</td><td style="text-align:end"><strong>' + n + '</strong></td></tr>').join('') + '</tbody></table>' : '<p class="muted">Nothing yet.</p>') + '</div>';
+  const devName = { mobile: 'Mobile', tablet: 'Tablet', desktop: 'Desktop' };
+  const visitHtml = vs.map((v) => {
+    const start = v[0].when, end = v[v.length - 1].when, mins = Math.max(1, Math.round((end - start) / 60000));
+    const first = v.find((e) => e.r) || v[0];
+    return '<details class="card" style="margin:0 0 10px"><summary style="cursor:pointer">' +
+      '<strong>' + esc(fmtDay(start)) + '</strong> · ' + esc(fmtTime(start).slice(0, 5)) + '–' + esc(fmtTime(end).slice(0, 5)) +
+      ' <span class="muted small">(' + (mins < 60 ? mins + ' min' : Math.round(mins / 6) / 10 + ' h') + ' · ' + v.filter((e) => e.t === 'view').length + ' pages · ' +
+      v.filter((e) => e.t !== 'view').length + ' clicks · ' + esc(devName[first.dv] || 'Desktop') + ' · ' + (first.lg === 'ar' ? 'Arabic' : 'English') +
+      (first.r ? ' · from ' + esc(N.sourceName(first.r)) : '') + ')</span></summary>' +
+      '<ol class="list" style="margin-top:10px">' + v.map((e) => '<li><span><span class="muted small" style="display:inline-block;min-width:74px">' + esc(fmtTime(e.when)) + '</span> ' +
+        (e.t === 'view' ? '👁️ Opened <strong>' + esc(N.pageName(e.p)) + '</strong>'
+          : e.t === 'form' ? '📨 Sent <strong>' + esc(N.formName(e.l || 'Form')) + '</strong>'
+          : '👆 Clicked <strong>' + esc(N.clickName(e.l || '(unnamed)')) + '</strong> <span class="muted small">on ' + esc(N.pageName(e.p)) + '</span>') +
+        '</span></li>').join('') + '</ol></details>';
+  }).join('');
+  const ranges = [[7, 'Last 7 days'], [30, 'Last 30 days'], [90, 'Last 90 days'], [0, 'Everything']];
+  box.innerHTML = '<div class="card hot"><div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">' +
+      '<div><span class="label">Activity</span><h2 style="margin:2px 0">' + esc(u.name || u.email) + '</h2>' +
+      '<p class="small muted" style="margin:0">Last login: <strong>' + esc(fmtLogin(u.lastLogin) || 'never') + '</strong>' +
+      (u.createdAt ? ' · Account created ' + esc(fmtLogin(u.createdAt)) : '') + ' · UAE time</p></div>' +
+      '<div class="row" style="gap:8px"><select id="act-range">' + ranges.map(([d, l]) => '<option value="' + d + '"' + (d === actRange ? ' selected' : '') + '>' + l + '</option>').join('') + '</select>' +
+      '<button type="button" class="btn btn-line btn-sm" id="act-close">Close</button></div></div>' +
+    (!vids.length ? '<p class="note">No website activity is linked to this account yet. It’s recorded from their next login onwards (on each browser they sign in from).</p>' :
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 0">' +
+        [[vs.length, 'Visits'], [views.length, 'Pages opened'], [clicks.length, 'Clicks'], [forms.length, 'Forms sent']].map(([n, l]) =>
+          '<div class="card" style="margin:0;text-align:center"><div class="big">' + n + '</div><div class="small muted">' + l + '</div></div>').join('') + '</div>' +
+      (list.length ? '<div class="grid2" style="margin-bottom:16px">' + mini('Pages they opened', topPages) + mini('What they clicked', topClicks) + '</div>' +
+        '<h3>Visit by visit</h3><p class="small muted">Newest first. Open a visit to see every page and click in order.</p>' + visitHtml
+        : '<p class="muted">No activity in this period.</p>')) +
+    '<p class="small muted" style="margin-top:12px">Includes their visits on any browser where they have signed in to OwnFit (also before signing in on that browser). Your own visits are never counted.</p></div>';
+  $('act-close').onclick = () => { box.innerHTML = ''; };
+  $('act-range').onchange = (e) => { actRange = Number(e.target.value); activityPanel(uid); };
 }
 
 /* ======================= Coach applications ======================= */
