@@ -578,7 +578,7 @@ async function activityPanel(uid) {
       '<ol class="list" style="margin-top:10px">' + v.map((e) => '<li><span><span class="muted small" style="display:inline-block;min-width:74px">' + esc(fmtTime(e.when)) + '</span> ' +
         (e.t === 'view' ? '👁️ Opened <strong>' + esc(N.pageName(e.p)) + '</strong>'
           : e.t === 'form' ? '📨 Sent <strong>' + esc(N.formName(e.l || 'Form')) + '</strong>'
-          : '👆 Clicked <strong>' + esc(N.clickName(e.l || '(unnamed)')) + '</strong> <span class="muted small">on ' + esc(N.pageName(e.p)) + '</span>') +
+          : '👆 ' + (/^(Opened|Chose) /.test(N.clickName(e.l || '')) ? '' : 'Clicked ') + '<strong>' + esc(N.clickName(e.l || '(unnamed)')) + '</strong> <span class="muted small">on ' + esc(N.pageName(e.p)) + '</span>') +
         '</span></li>').join('') + '</ol></details>';
   }).join('');
   const ranges = [[7, 'Last 7 days'], [30, 'Last 30 days'], [90, 'Last 90 days'], [0, 'Everything']];
